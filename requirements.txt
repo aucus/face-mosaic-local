@@ -1,0 +1,22 @@
+# Face Mosaic Local - 의존성 패키지
+
+# 이미지 처리 및 얼굴 감지
+opencv-python>=4.8.0  # OpenCV: 얼굴 감지 & 이미지 처리
+
+# 배열 연산
+numpy>=1.24.0  # NumPy: 배열 연산
+
+# 이미지 I/O 및 메타데이터
+Pillow>=10.0.0  # Pillow: 이미지 I/O, EXIF 메타데이터 보존
+
+# 진행률 표시
+tqdm>=4.65.0  # tqdm: 진행률 표시
+
+# 테스트 (개발용)
+pytest>=7.4.0  # pytest: 단위 테스트 프레임워크
+
+# GUI
+PySide6>=6.5.0  # PySide6: Qt 기반 GUI 프레임워크 (macOS 호환성 우수)
+
+# 배포 (선택)
+pyinstaller>=6.0.0  # PyInstaller: 단일 실행 파일 빌드
