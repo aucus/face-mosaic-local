@@ -120,8 +120,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--logo-size",
         type=float,
-        default=0.1,
-        help="로고 크기 비율 (0.0 ~ 1.0, 기본값: 0.1)"
+        default=0.2,  # 기본값 2배 증가 (0.1 → 0.2)
+        help="로고 크기 비율 (0.0 ~ 1.0, 기본값: 0.2)"
     )
     
     parser.add_argument(

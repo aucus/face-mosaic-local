@@ -7,6 +7,7 @@ macOS 26.2 호환성 문제 해결
 """
 
 import sys
+import os
 from pathlib import Path
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
@@ -55,13 +56,20 @@ class FaceMosaicGUI(QMainWindow):
         
         # 변수
         self.input_folder = ""
-        self.output_folder = "./output"
+        # PyInstaller 빌드 앱에서는 사용자 홈 디렉토리 사용
+        if hasattr(sys, '_MEIPASS'):
+            # 빌드된 앱인 경우
+            default_output = str(Path.home() / "Desktop" / "FaceMosaicOutput")
+        else:
+            # 개발 모드
+            default_output = str(Path.cwd() / "output")
+        self.output_folder = default_output
         self.detector_type = "dnn"
         self.method = "mosaic"
         self.mosaic_size = 10
         self.confidence = 0.5
         self.logo_path = ""
-        self.logo_scale = 0.1
+        self.logo_scale = 0.2  # 기본값 2배 증가 (0.1 → 0.2)
         self.logo_margin = 20
         self.logo_opacity = 1.0
         
@@ -112,7 +120,7 @@ class FaceMosaicGUI(QMainWindow):
         output_layout = QHBoxLayout()
         output_layout.addWidget(QLabel("출력 폴더:"))
         self.output_folder_edit = QLineEdit()
-        self.output_folder_edit.setText("./output")
+        self.output_folder_edit.setText(self.output_folder)
         output_layout.addWidget(self.output_folder_edit)
         btn_output = QPushButton("선택")
         btn_output.clicked.connect(self.select_output_folder)
@@ -203,9 +211,9 @@ class FaceMosaicGUI(QMainWindow):
         logo_scale_layout.addWidget(QLabel("로고 크기:"))
         self.logo_scale_spin = QDoubleSpinBox()
         self.logo_scale_spin.setMinimum(0.05)
-        self.logo_scale_spin.setMaximum(0.5)
+        self.logo_scale_spin.setMaximum(1.0)  # 최대값 증가 (0.5 → 1.0)
         self.logo_scale_spin.setSingleStep(0.05)
-        self.logo_scale_spin.setValue(0.1)
+        self.logo_scale_spin.setValue(0.2)  # 기본값 2배 증가 (0.1 → 0.2)
         self.logo_scale_spin.setDecimals(2)
         logo_scale_layout.addWidget(self.logo_scale_spin)
         logo_scale_layout.addStretch()
@@ -352,7 +360,28 @@ class FaceMosaicGUI(QMainWindow):
         self.method = "blur" if self.blur_radio.isChecked() else "mosaic"
         self.mosaic_size = self.mosaic_slider.value()
         self.confidence = self.confidence_slider.value() / 100.0
-        self.output_folder = self.output_folder_edit.text() or "./output"
+        # 출력 폴더 경로 처리 (상대 경로를 절대 경로로 변환)
+        output_folder_text = self.output_folder_edit.text().strip()
+        if not output_folder_text:
+            # 기본값 설정
+            if hasattr(sys, '_MEIPASS'):
+                output_folder_text = str(Path.home() / "Desktop" / "FaceMosaicOutput")
+            else:
+                output_folder_text = str(Path.cwd() / "output")
+        
+        # 상대 경로를 절대 경로로 변환
+        output_path = Path(output_folder_text)
+        if not output_path.is_absolute():
+            if hasattr(sys, '_MEIPASS'):
+                # 빌드된 앱: 홈 디렉토리 기준
+                output_path = Path.home() / output_folder_text
+            else:
+                # 개발 모드: 현재 작업 디렉토리 기준
+                output_path = Path.cwd() / output_folder_text
+        
+        # 출력 폴더 생성
+        output_path.mkdir(parents=True, exist_ok=True)
+        self.output_folder = str(output_path)
         self.logo_path = self.logo_path_edit.text() or ""
         self.logo_scale = self.logo_scale_spin.value()
         self.logo_margin = self.logo_margin_spin.value()

@@ -29,7 +29,7 @@ class FaceMosaicProcessor:
         blur_kernel_size: int = 51,
         quality: int = 95,
         logo_path: Optional[str] = None,
-        logo_scale: float = 0.1,
+        logo_scale: float = 0.2,  # 기본값 2배 증가 (0.1 → 0.2)
         logo_margin: int = 20,
         logo_opacity: float = 1.0
     ):
