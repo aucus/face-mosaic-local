@@ -23,6 +23,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.processor import FaceMosaicProcessor
 from src.utils import setup_logger
+from gui.manual_mosaic_window import ManualMosaicWindow
 
 
 class ProcessingThread(QThread):
@@ -76,6 +77,9 @@ class FaceMosaicGUI(QMainWindow):
         # 처리 중 플래그
         self.processing = False
         self.processing_thread = None
+        
+        # 수동 모자이크 창 참조 (가비지 컬렉션 방지)
+        self._manual_window = None
         
         # 로거 설정
         self.logger = setup_logger("face_mosaic_gui")
@@ -232,8 +236,46 @@ class FaceMosaicGUI(QMainWindow):
         
         main_layout.addWidget(logo_group)
         
-        # 처리 시작 버튼
-        self.process_button = QPushButton("처리 시작")
+        # 모드 선택 버튼
+        mode_layout = QHBoxLayout()
+        self.process_button = QPushButton("자동 처리 시작")
+        self.process_button.setStyleSheet("""
+            QPushButton {
+                background-color: #4CAF50;
+                color: white;
+                font-size: 14px;
+                font-weight: bold;
+                padding: 10px;
+                border-radius: 5px;
+            }
+            QPushButton:hover {
+                background-color: #45a049;
+            }
+            QPushButton:disabled {
+                background-color: #cccccc;
+            }
+        """)
+        self.process_button.clicked.connect(self.start_processing)
+        mode_layout.addWidget(self.process_button)
+        
+        self.manual_button = QPushButton("수동 모자이크 지정")
+        self.manual_button.setStyleSheet("""
+            QPushButton {
+                background-color: #2196F3;
+                color: white;
+                font-size: 14px;
+                font-weight: bold;
+                padding: 10px;
+                border-radius: 5px;
+            }
+            QPushButton:hover {
+                background-color: #1976D2;
+            }
+        """)
+        self.manual_button.clicked.connect(self.open_manual_mosaic)
+        mode_layout.addWidget(self.manual_button)
+        
+        main_layout.addLayout(mode_layout)
         self.process_button.setStyleSheet("""
             QPushButton {
                 background-color: #4CAF50;
@@ -315,6 +357,72 @@ class FaceMosaicGUI(QMainWindow):
             self.logo_path = file
             self.logo_path_edit.setText(file)
             self.log(f"로고 파일: {file}")
+    
+    def open_manual_mosaic(self):
+        """수동 모자이크 지정 창 열기"""
+        try:
+            self.log("수동 모자이크 지정 창 열기...")
+            
+            # 기존 창이 있으면 재사용하지 않고 새로 생성
+            # 창 인스턴스를 클래스 변수로 저장하여 중복 생성 방지
+            if not hasattr(self, '_manual_window') or self._manual_window is None:
+                self.log("새 수동 모자이크 창 생성 중...")
+                self._manual_window = ManualMosaicWindow()
+                self.log(f"창 생성 완료: {self._manual_window}")
+            else:
+                # 기존 창이 있으면 닫고 새로 생성
+                self.log("기존 창 닫고 새로 생성...")
+                try:
+                    self._manual_window.close()
+                except:
+                    pass
+                self._manual_window = ManualMosaicWindow()
+            
+            manual_window = self._manual_window
+            
+            # 입력 폴더가 설정되어 있으면 전달
+            if self.input_folder:
+                self.log(f"입력 폴더 전달: {self.input_folder}")
+                manual_window.load_folder(self.input_folder)
+            
+            # 출력 폴더도 전달
+            if self.output_folder:
+                manual_window.output_folder = self.output_folder
+                # UI 업데이트
+                if hasattr(manual_window, 'output_folder_label'):
+                    manual_window.output_folder_label.setText(f"출력: {self.output_folder}")
+            
+            # 로고 설정도 전달
+            if self.logo_path:
+                manual_window.logo_path = self.logo_path
+                if hasattr(manual_window, 'logo_path_edit'):
+                    manual_window.logo_path_edit.setText(self.logo_path)
+                if hasattr(manual_window, 'logo_scale_spin'):
+                    manual_window.logo_scale = self.logo_scale
+                    manual_window.logo_scale_spin.setValue(self.logo_scale)
+                if hasattr(manual_window, 'logo_margin_spin'):
+                    manual_window.logo_margin = self.logo_margin
+                    manual_window.logo_margin_spin.setValue(self.logo_margin)
+                if hasattr(manual_window, 'logo_opacity_spin'):
+                    manual_window.logo_opacity = self.logo_opacity
+                    manual_window.logo_opacity_spin.setValue(self.logo_opacity)
+            
+            # 창 표시 및 활성화
+            self.log(f"창 표시 전: visible={manual_window.isVisible()}, isHidden={manual_window.isHidden()}")
+            manual_window.show()
+            self.log(f"창 표시 후: visible={manual_window.isVisible()}, isHidden={manual_window.isHidden()}")
+            manual_window.raise_()  # 창을 앞으로 가져오기
+            manual_window.activateWindow()  # 창 활성화
+            self.log(f"창 위치: {manual_window.geometry()}, 창 제목: {manual_window.windowTitle()}")
+            
+            self.log("수동 모자이크 지정 창이 열렸습니다.")
+        except Exception as e:
+            error_msg = f"수동 모자이크 지정 창을 여는 중 오류가 발생했습니다: {str(e)}"
+            self.log(error_msg)
+            import traceback
+            error_details = traceback.format_exc()
+            self.log(error_details)
+            QMessageBox.critical(self, "오류", f"{error_msg}\n\n상세:\n{error_details}")
     
     def log(self, message: str):
         """로그 메시지 추가"""
