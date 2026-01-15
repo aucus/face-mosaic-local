@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QLabel, QLineEdit, QFileDialog, QMessageBox,
     QProgressBar, QTextEdit, QGroupBox, QRadioButton, QButtonGroup,
-    QSlider, QDoubleSpinBox, QSpinBox
+    QSlider, QDoubleSpinBox, QSpinBox, QTabWidget
 )
 from PySide6.QtCore import Qt, QThread, Signal
 from PySide6.QtGui import QFont
@@ -23,7 +23,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.processor import FaceMosaicProcessor
 from src.utils import setup_logger
-from gui.manual_mosaic_window import ManualMosaicWindow
+from gui.manual_mosaic_window import ManualMosaicWidget
 
 
 class ProcessingThread(QThread):
@@ -78,9 +78,6 @@ class FaceMosaicGUI(QMainWindow):
         self.processing = False
         self.processing_thread = None
         
-        # 수동 모자이크 창 참조 (가비지 컬렉션 방지)
-        self._manual_window = None
-        
         # 로거 설정
         self.logger = setup_logger("face_mosaic_gui")
         
@@ -93,8 +90,8 @@ class FaceMosaicGUI(QMainWindow):
         self.setCentralWidget(central_widget)
         
         main_layout = QVBoxLayout(central_widget)
-        main_layout.setSpacing(15)
-        main_layout.setContentsMargins(20, 20, 20, 20)
+        main_layout.setSpacing(12)
+        main_layout.setContentsMargins(18, 18, 18, 18)
         
         # 제목
         title_label = QLabel("Face Mosaic Local")
@@ -105,39 +102,136 @@ class FaceMosaicGUI(QMainWindow):
         title_label.setAlignment(Qt.AlignCenter)
         main_layout.addWidget(title_label)
         
-        # 폴더 선택 그룹
-        folder_group = QGroupBox("폴더 선택")
-        folder_layout = QVBoxLayout(folder_group)
+        # 탭 메뉴 (자동/수동)
+        self.tabs = QTabWidget()
+        self.tabs.setTabPosition(QTabWidget.North)
         
-        # 입력 폴더
+        auto_page = QWidget()
+        auto_layout = QVBoxLayout(auto_page)
+        auto_hint = QLabel("자동 처리 옵션은 우측 패널에서 설정하세요.")
+        auto_hint.setStyleSheet("color: #888;")
+        auto_layout.addWidget(auto_hint)
+        auto_layout.addStretch()
+        self.tabs.addTab(auto_page, "자동 처리")
+        
+        manual_page = QWidget()
+        manual_layout = QVBoxLayout(manual_page)
+        self.manual_widget = ManualMosaicWidget(
+            show_folder_controls=False,
+            show_logo_controls=False,
+            embed_controls=False
+        )
+        manual_layout.addWidget(self.manual_widget, stretch=1)
+        self.tabs.addTab(manual_page, "수동 지정")
+        
+        # 본문 레이아웃 (좌: 탭, 우: 컨트롤 패널)
+        body_layout = QHBoxLayout()
+        body_layout.setSpacing(12)
+        body_layout.addWidget(self.tabs, stretch=1)
+        
+        right_panel = QWidget()
+        right_layout = QVBoxLayout(right_panel)
+        right_layout.setContentsMargins(8, 8, 8, 8)
+        right_layout.setSpacing(10)
+        
+        # 입력/출력 폴더
+        folder_group = QGroupBox("입력/출력")
+        folder_layout = QVBoxLayout(folder_group)
+        folder_layout.setContentsMargins(10, 8, 10, 8)
+        folder_layout.setSpacing(6)
+        
         input_layout = QHBoxLayout()
-        input_layout.addWidget(QLabel("입력 폴더:"))
+        input_layout.setSpacing(6)
+        input_layout.addWidget(QLabel("입력:"))
         self.input_folder_edit = QLineEdit()
         self.input_folder_edit.setPlaceholderText("입력 폴더를 선택하세요")
+        self.input_folder_edit.editingFinished.connect(self.on_input_folder_edited)
         input_layout.addWidget(self.input_folder_edit)
         btn_input = QPushButton("선택")
         btn_input.clicked.connect(self.select_input_folder)
         input_layout.addWidget(btn_input)
         folder_layout.addLayout(input_layout)
         
-        # 출력 폴더
         output_layout = QHBoxLayout()
-        output_layout.addWidget(QLabel("출력 폴더:"))
+        output_layout.setSpacing(6)
+        output_layout.addWidget(QLabel("출력:"))
         self.output_folder_edit = QLineEdit()
         self.output_folder_edit.setText(self.output_folder)
+        self.output_folder_edit.editingFinished.connect(self.on_output_folder_edited)
         output_layout.addWidget(self.output_folder_edit)
         btn_output = QPushButton("선택")
         btn_output.clicked.connect(self.select_output_folder)
         output_layout.addWidget(btn_output)
         folder_layout.addLayout(output_layout)
         
-        main_layout.addWidget(folder_group)
+        right_layout.addWidget(folder_group)
         
-        # 옵션 설정 그룹
-        options_group = QGroupBox("옵션 설정")
+        # 로고 설정 (공통)
+        logo_group = QGroupBox("로고 설정 (공통)")
+        logo_group.setMaximumHeight(180)  # 높이를 1/2로 제한
+        logo_layout = QVBoxLayout(logo_group)
+        logo_layout.setContentsMargins(8, 6, 8, 6)
+        logo_layout.setSpacing(6)
+        
+        logo_file_layout = QHBoxLayout()
+        logo_file_layout.addWidget(QLabel("로고 파일:"))
+        self.logo_path_edit = QLineEdit()
+        self.logo_path_edit.setPlaceholderText("로고 파일을 선택하세요 (선택사항)")
+        logo_file_layout.addWidget(self.logo_path_edit)
+        btn_logo = QPushButton("선택")
+        btn_logo.clicked.connect(self.select_logo)
+        logo_file_layout.addWidget(btn_logo)
+        logo_layout.addLayout(logo_file_layout)
+        
+        logo_scale_layout = QHBoxLayout()
+        logo_scale_layout.addWidget(QLabel("로고 크기:"))
+        self.logo_scale_spin = QDoubleSpinBox()
+        self.logo_scale_spin.setMinimum(0.05)
+        self.logo_scale_spin.setMaximum(1.0)
+        self.logo_scale_spin.setSingleStep(0.05)
+        self.logo_scale_spin.setValue(0.2)
+        self.logo_scale_spin.setDecimals(2)
+        self.logo_scale_spin.valueChanged.connect(self.update_logo_scale)
+        logo_scale_layout.addWidget(self.logo_scale_spin)
+        logo_scale_layout.addStretch()
+        logo_layout.addLayout(logo_scale_layout)
+        
+        logo_margin_layout = QHBoxLayout()
+        logo_margin_layout.addWidget(QLabel("로고 여백:"))
+        self.logo_margin_spin = QSpinBox()
+        self.logo_margin_spin.setMinimum(0)
+        self.logo_margin_spin.setMaximum(100)
+        self.logo_margin_spin.setValue(20)
+        self.logo_margin_spin.valueChanged.connect(self.update_logo_margin)
+        logo_margin_layout.addWidget(self.logo_margin_spin)
+        logo_margin_layout.addStretch()
+        logo_layout.addLayout(logo_margin_layout)
+        
+        logo_opacity_layout = QHBoxLayout()
+        logo_opacity_layout.addWidget(QLabel("로고 투명도:"))
+        self.logo_opacity_spin = QDoubleSpinBox()
+        self.logo_opacity_spin.setMinimum(0.0)
+        self.logo_opacity_spin.setMaximum(1.0)
+        self.logo_opacity_spin.setSingleStep(0.1)
+        self.logo_opacity_spin.setValue(1.0)
+        self.logo_opacity_spin.setDecimals(1)
+        self.logo_opacity_spin.valueChanged.connect(self.update_logo_opacity)
+        logo_opacity_layout.addWidget(self.logo_opacity_spin)
+        logo_opacity_layout.addStretch()
+        logo_layout.addLayout(logo_opacity_layout)
+        
+        right_layout.addWidget(logo_group)
+        
+        # 컨트롤 스택 (자동/수동)
+        self.controls_stack = QTabWidget()
+        self.controls_stack.tabBar().hide()
+        
+        auto_controls = QWidget()
+        auto_controls_layout = QVBoxLayout(auto_controls)
+        
+        options_group = QGroupBox("자동 처리 옵션")
         options_layout = QVBoxLayout(options_group)
         
-        # 감지기 선택
         detector_layout = QHBoxLayout()
         detector_layout.addWidget(QLabel("감지기:"))
         self.detector_group = QButtonGroup()
@@ -151,7 +245,6 @@ class FaceMosaicGUI(QMainWindow):
         detector_layout.addStretch()
         options_layout.addLayout(detector_layout)
         
-        # 처리 방법
         method_layout = QHBoxLayout()
         method_layout.addWidget(QLabel("처리 방법:"))
         self.method_group = QButtonGroup()
@@ -165,7 +258,6 @@ class FaceMosaicGUI(QMainWindow):
         method_layout.addStretch()
         options_layout.addLayout(method_layout)
         
-        # 모자이크 크기
         mosaic_layout = QHBoxLayout()
         mosaic_layout.addWidget(QLabel("모자이크 크기:"))
         self.mosaic_slider = QSlider(Qt.Horizontal)
@@ -179,7 +271,6 @@ class FaceMosaicGUI(QMainWindow):
         mosaic_layout.addWidget(self.mosaic_size_label)
         options_layout.addLayout(mosaic_layout)
         
-        # 신뢰도
         confidence_layout = QHBoxLayout()
         confidence_layout.addWidget(QLabel("신뢰도:"))
         self.confidence_slider = QSlider(Qt.Horizontal)
@@ -193,51 +284,8 @@ class FaceMosaicGUI(QMainWindow):
         confidence_layout.addWidget(self.confidence_label)
         options_layout.addLayout(confidence_layout)
         
-        main_layout.addWidget(options_group)
+        auto_controls_layout.addWidget(options_group)
         
-        # 로고 설정 그룹
-        logo_group = QGroupBox("로고 설정 (선택)")
-        logo_layout = QVBoxLayout(logo_group)
-        
-        # 로고 파일
-        logo_file_layout = QHBoxLayout()
-        logo_file_layout.addWidget(QLabel("로고 파일:"))
-        self.logo_path_edit = QLineEdit()
-        self.logo_path_edit.setPlaceholderText("로고 파일을 선택하세요 (선택사항)")
-        logo_file_layout.addWidget(self.logo_path_edit)
-        btn_logo = QPushButton("선택")
-        btn_logo.clicked.connect(self.select_logo)
-        logo_file_layout.addWidget(btn_logo)
-        logo_layout.addLayout(logo_file_layout)
-        
-        # 로고 크기
-        logo_scale_layout = QHBoxLayout()
-        logo_scale_layout.addWidget(QLabel("로고 크기:"))
-        self.logo_scale_spin = QDoubleSpinBox()
-        self.logo_scale_spin.setMinimum(0.05)
-        self.logo_scale_spin.setMaximum(1.0)  # 최대값 증가 (0.5 → 1.0)
-        self.logo_scale_spin.setSingleStep(0.05)
-        self.logo_scale_spin.setValue(0.2)  # 기본값 2배 증가 (0.1 → 0.2)
-        self.logo_scale_spin.setDecimals(2)
-        logo_scale_layout.addWidget(self.logo_scale_spin)
-        logo_scale_layout.addStretch()
-        logo_layout.addLayout(logo_scale_layout)
-        
-        # 로고 여백
-        logo_margin_layout = QHBoxLayout()
-        logo_margin_layout.addWidget(QLabel("로고 여백:"))
-        self.logo_margin_spin = QSpinBox()
-        self.logo_margin_spin.setMinimum(0)
-        self.logo_margin_spin.setMaximum(100)
-        self.logo_margin_spin.setValue(20)
-        logo_margin_layout.addWidget(self.logo_margin_spin)
-        logo_margin_layout.addStretch()
-        logo_layout.addLayout(logo_margin_layout)
-        
-        main_layout.addWidget(logo_group)
-        
-        # 모드 선택 버튼
-        mode_layout = QHBoxLayout()
         self.process_button = QPushButton("자동 처리 시작")
         self.process_button.setStyleSheet("""
             QPushButton {
@@ -256,72 +304,67 @@ class FaceMosaicGUI(QMainWindow):
             }
         """)
         self.process_button.clicked.connect(self.start_processing)
-        mode_layout.addWidget(self.process_button)
+        auto_controls_layout.addWidget(self.process_button)
         
-        self.manual_button = QPushButton("수동 모자이크 지정")
-        self.manual_button.setStyleSheet("""
-            QPushButton {
-                background-color: #2196F3;
-                color: white;
-                font-size: 14px;
-                font-weight: bold;
-                padding: 10px;
-                border-radius: 5px;
-            }
-            QPushButton:hover {
-                background-color: #1976D2;
-            }
-        """)
-        self.manual_button.clicked.connect(self.open_manual_mosaic)
-        mode_layout.addWidget(self.manual_button)
+        self.controls_stack.addTab(auto_controls, "auto")
         
-        main_layout.addLayout(mode_layout)
-        self.process_button.setStyleSheet("""
-            QPushButton {
-                background-color: #4CAF50;
-                color: white;
-                font-size: 14px;
-                font-weight: bold;
-                padding: 10px;
-                border-radius: 5px;
-            }
-            QPushButton:hover {
-                background-color: #45a049;
-            }
-            QPushButton:disabled {
-                background-color: #cccccc;
-            }
-        """)
-        self.process_button.clicked.connect(self.start_processing)
-        main_layout.addWidget(self.process_button)
+        manual_controls = QWidget()
+        manual_controls_layout = QVBoxLayout(manual_controls)
+        manual_controls_layout.addWidget(self.manual_widget.controls_widget)
+        self.controls_stack.addTab(manual_controls, "manual")
         
-        # 프로그레스 바
+        right_layout.addWidget(self.controls_stack)
+        
+        # 상태 + 로그
         self.progress_bar = QProgressBar()
         self.progress_bar.setVisible(False)
-        main_layout.addWidget(self.progress_bar)
+        right_layout.addWidget(self.progress_bar)
         
-        # 상태 레이블
         self.status_label = QLabel("준비됨")
         self.status_label.setAlignment(Qt.AlignCenter)
-        main_layout.addWidget(self.status_label)
+        self.status_label.setFixedHeight(20)
+        right_layout.addWidget(self.status_label)
         
-        # 로그 영역
         log_group = QGroupBox("로그")
         log_layout = QVBoxLayout(log_group)
+        log_layout.setContentsMargins(8, 6, 8, 6)
         self.log_text = QTextEdit()
         self.log_text.setReadOnly(True)
-        self.log_text.setMaximumHeight(200)
+        self.log_text.setMinimumHeight(200)
         log_layout.addWidget(self.log_text)
-        main_layout.addWidget(log_group)
+        right_layout.addWidget(log_group, stretch=1)
+        
+        right_panel.setFixedWidth(360)
+        body_layout.addWidget(right_panel)
+        
+        main_layout.addLayout(body_layout)
+        
+        # 탭 전환 시 우측 컨트롤 변경
+        self.tabs.currentChanged.connect(self.on_tab_changed)
+        self.on_tab_changed(0)
+        
+        # 초기 상태 동기화
+        self.sync_manual_settings()
         
         # 초기 로그
         self.log("Face Mosaic Local GUI 시작")
-        self.log("입력 폴더와 출력 폴더를 선택한 후 '처리 시작' 버튼을 클릭하세요.")
+        self.log("상단 탭에서 자동/수동 모드를 선택하세요.")
     
     def update_mosaic_size_label(self, value):
         """모자이크 크기 레이블 업데이트"""
         self.mosaic_size_label.setText(str(value))
         self.mosaic_size = value
+
+    def on_tab_changed(self, index: int) -> None:
+        """탭 변경 시 우측 컨트롤 전환"""
+        if hasattr(self, "controls_stack"):
+            self.controls_stack.setCurrentIndex(index)
+        if index == 1:
+            # 수동 모드 진입 시 폴더/로고 동기화
+            if self.input_folder:
+                self.manual_widget.set_input_folder(self.input_folder)
+            self.manual_widget.set_output_folder(self.output_folder)
+            self.sync_manual_settings()
     
     def update_confidence_label(self, value):
         """신뢰도 레이블 업데이트"""
@@ -336,6 +379,7 @@ class FaceMosaicGUI(QMainWindow):
             self.input_folder = folder
             self.input_folder_edit.setText(folder)
             self.log(f"입력 폴더: {folder}")
+            self.manual_widget.set_input_folder(folder)
     
     def select_output_folder(self):
         """출력 폴더 선택"""
@@ -344,6 +388,7 @@ class FaceMosaicGUI(QMainWindow):
             self.output_folder = folder
             self.output_folder_edit.setText(folder)
             self.log(f"출력 폴더: {folder}")
+            self.manual_widget.set_output_folder(folder)
     
     def select_logo(self):
         """로고 파일 선택"""
@@ -357,72 +402,46 @@ class FaceMosaicGUI(QMainWindow):
             self.logo_path = file
             self.logo_path_edit.setText(file)
             self.log(f"로고 파일: {file}")
+            self.sync_manual_settings()
     
-    def open_manual_mosaic(self):
-        """수동 모자이크 지정 창 열기"""
-        try:
-            self.log("수동 모자이크 지정 창 열기...")
-            
-            # 기존 창이 있으면 재사용하지 않고 새로 생성
-            # 창 인스턴스를 클래스 변수로 저장하여 중복 생성 방지
-            if not hasattr(self, '_manual_window') or self._manual_window is None:
-                self.log("새 수동 모자이크 창 생성 중...")
-                self._manual_window = ManualMosaicWindow()
-                self.log(f"창 생성 완료: {self._manual_window}")
-            else:
-                # 기존 창이 있으면 닫고 새로 생성
-                self.log("기존 창 닫고 새로 생성...")
-                try:
-                    self._manual_window.close()
-                except:
-                    pass
-                self._manual_window = ManualMosaicWindow()
-            
-            manual_window = self._manual_window
-            
-            # 입력 폴더가 설정되어 있으면 전달
-            if self.input_folder:
-                self.log(f"입력 폴더 전달: {self.input_folder}")
-                manual_window.load_folder(self.input_folder)
-            
-            # 출력 폴더도 전달
-            if self.output_folder:
-                manual_window.output_folder = self.output_folder
-                # UI 업데이트
-                if hasattr(manual_window, 'output_folder_label'):
-                    manual_window.output_folder_label.setText(f"출력: {self.output_folder}")
-            
-            # 로고 설정도 전달
-            if self.logo_path:
-                manual_window.logo_path = self.logo_path
-                if hasattr(manual_window, 'logo_path_edit'):
-                    manual_window.logo_path_edit.setText(self.logo_path)
-                if hasattr(manual_window, 'logo_scale_spin'):
-                    manual_window.logo_scale = self.logo_scale
-                    manual_window.logo_scale_spin.setValue(self.logo_scale)
-                if hasattr(manual_window, 'logo_margin_spin'):
-                    manual_window.logo_margin = self.logo_margin
-                    manual_window.logo_margin_spin.setValue(self.logo_margin)
-                if hasattr(manual_window, 'logo_opacity_spin'):
-                    manual_window.logo_opacity = self.logo_opacity
-                    manual_window.logo_opacity_spin.setValue(self.logo_opacity)
-            
-            # 창 표시 및 활성화
-            self.log(f"창 표시 전: visible={manual_window.isVisible()}, isHidden={manual_window.isHidden()}")
-            manual_window.show()
-            self.log(f"창 표시 후: visible={manual_window.isVisible()}, isHidden={manual_window.isHidden()}")
-            manual_window.raise_()  # 창을 앞으로 가져오기
-            manual_window.activateWindow()  # 창 활성화
-            self.log(f"창 위치: {manual_window.geometry()}, 창 제목: {manual_window.windowTitle()}")
-            
-            self.log("수동 모자이크 지정 창이 열렸습니다.")
-        except Exception as e:
-            error_msg = f"수동 모자이크 지정 창을 여는 중 오류가 발생했습니다: {str(e)}"
-            self.log(error_msg)
-            import traceback
-            error_details = traceback.format_exc()
-            self.log(error_details)
-            QMessageBox.critical(self, "오류", f"{error_msg}\n\n상세:\n{error_details}")
+    def update_logo_scale(self, value: float):
+        """로고 크기 업데이트"""
+        self.logo_scale = value
+        self.sync_manual_settings()
+    
+    def update_logo_margin(self, value: int):
+        """로고 여백 업데이트"""
+        self.logo_margin = value
+        self.sync_manual_settings()
+    
+    def update_logo_opacity(self, value: float):
+        """로고 투명도 업데이트"""
+        self.logo_opacity = value
+        self.sync_manual_settings()
+    
+    def on_input_folder_edited(self):
+        """입력 폴더 직접 입력 처리"""
+        folder = self.input_folder_edit.text().strip()
+        if folder:
+            self.input_folder = folder
+            self.manual_widget.set_input_folder(folder)
+    
+    def on_output_folder_edited(self):
+        """출력 폴더 직접 입력 처리"""
+        folder = self.output_folder_edit.text().strip()
+        if folder:
+            self.output_folder = folder
+            self.manual_widget.set_output_folder(folder)
+    
+    def sync_manual_settings(self):
+        """수동 위젯에 공통 설정 전달"""
+        self.manual_widget.set_output_folder(self.output_folder)
+        self.manual_widget.set_logo_settings(
+            self.logo_path,
+            self.logo_scale,
+            self.logo_margin,
+            self.logo_opacity
+        )
     
     def log(self, message: str):
         """로그 메시지 추가"""
