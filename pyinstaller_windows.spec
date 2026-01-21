@@ -1,5 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
-# macOS 앱 빌드를 위한 PyInstaller 설정 파일
+# Windows 앱 빌드를 위한 PyInstaller 설정 파일
 
 block_cipher = None
 
@@ -53,23 +53,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=None,  # 아이콘은 build_macos.py에서 처리
-)
-
-app = BUNDLE(
-    exe,
-    name='FaceMosaicLocal.app',
-    icon=None,  # 아이콘은 build_macos.py에서 처리
-    bundle_identifier='com.facemosaic.local',
-    info_plist={
-        'NSPrincipalClass': 'NSApplication',
-        'NSHighResolutionCapable': 'True',
-        'CFBundleName': 'Face Mosaic Local',
-        'CFBundleDisplayName': 'Face Mosaic Local',
-        'CFBundleVersion': '1.0.0',
-        'CFBundleShortVersionString': '1.0.0',
-        'NSHumanReadableCopyright': 'Copyright © 2026',
-        'NSPhotoLibraryUsageDescription': '이 앱은 이미지 파일에 접근하여 얼굴 모자이크 처리를 수행합니다.',
-        'NSDocumentsFolderUsageDescription': '이 앱은 이미지 파일을 읽고 저장하기 위해 문서 폴더에 접근합니다.',
-    },
+    icon=None,  # 아이콘은 build_windows.py에서 처리
 )

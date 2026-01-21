@@ -204,6 +204,48 @@ python build_macos.py
 # DMG 생성 여부를 물어보면 'y' 입력
 ```
 
+## 🪟 Windows 앱 빌드
+
+Windows용 .exe 실행 파일 생성 (GUI 포함):
+
+```bash
+# Windows 앱 빌드
+python build_windows.py
+```
+
+빌드된 실행 파일:
+- `dist/FaceMosaicLocal.exe` - 더블클릭으로 실행 가능한 Windows 실행 파일
+
+### 빌드 전 필수 사항
+
+1. **의존성 설치**:
+   ```bash
+   pip install -r requirements.txt
+   pip install pyinstaller
+   ```
+
+2. **모델 파일 다운로드** (DNN 감지기 사용 시):
+   ```bash
+   python download_models.py
+   ```
+
+### 아이콘 설정
+
+아이콘을 사용하려면:
+
+```bash
+# 1. 256x256 이상의 PNG 아이콘을 assets/icon.png로 저장
+# 2. build_windows.py가 자동으로 .ico 파일로 변환
+# 또는 assets/icon.ico 파일을 직접 준비
+```
+
+### 빌드 결과물
+
+빌드가 완료되면 `dist/FaceMosaicLocal.exe` 파일이 생성됩니다:
+- 모든 의존성과 리소스 파일이 포함된 독립 실행 파일
+- 다른 Windows 컴퓨터로 복사하여 바로 실행 가능
+- 설치 과정 없이 더블클릭으로 실행
+
 ## 🧪 테스트
 
 단위 테스트 실행:
@@ -240,9 +282,13 @@ face-mosaic-local/
 ├── output/              # 처리 결과 (gitignore)
 ├── requirements.txt     # 의존성
 ├── download_models.py   # 모델 다운로드 스크립트
-├── build.py             # 빌드 스크립트
-├── pyinstaller.spec     # PyInstaller 설정
-└── README.md            # 이 문서
+├── build.py             # CLI 빌드 스크립트
+├── build_macos.py        # macOS 앱 빌드 스크립트
+├── build_windows.py      # Windows 앱 빌드 스크립트
+├── pyinstaller.spec      # CLI PyInstaller 설정
+├── pyinstaller_macos.spec # macOS 앱 PyInstaller 설정
+├── pyinstaller_windows.spec # Windows 앱 PyInstaller 설정
+└── README.md             # 이 문서
 ```
 
 ## 🐛 문제 해결

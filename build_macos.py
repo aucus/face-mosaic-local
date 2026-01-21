@@ -24,7 +24,7 @@ def clean_build_dirs():
     
     # .spec 파일로 생성된 임시 파일 정리
     for spec_file in Path('.').glob('*.spec'):
-        if spec_file.name not in ['pyinstaller.spec', 'pyinstaller_macos.spec']:
+        if spec_file.name not in ['pyinstaller.spec', 'pyinstaller_macos.spec', 'pyinstaller_windows.spec']:
             print(f"삭제 중: {spec_file}")
             spec_file.unlink()
 
