@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import List, Optional, Tuple
 import cv2
 import numpy as np
-from PIL import Image, ExifTags
+from PIL import Image, ExifTags, ImageOps
 
 
 # 지원하는 이미지 확장자
@@ -75,6 +75,12 @@ def load_image(path: str) -> Tuple[np.ndarray, Optional[dict]]:
         for tag_id, value in exif_dict.items():
             tag = ExifTags.TAGS.get(tag_id, tag_id)
             exif_data[tag] = value
+    
+    # EXIF Orientation 적용 (세로 사진 등 회전 정보 반영)
+    pil_image = ImageOps.exif_transpose(pil_image)
+    # 저장 시 이중 회전 방지: 적용된 픽셀에 맞게 Orientation을 정상(1)으로 설정
+    if exif_data and exif_data.get("Orientation", 1) != 1:
+        exif_data["Orientation"] = 1
     
     # OpenCV 형식으로 변환 (BGR)
     image_array = np.array(pil_image)
