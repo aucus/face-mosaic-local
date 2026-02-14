@@ -12,7 +12,7 @@ import numpy as np
 def apply_mosaic(
     image: np.ndarray,
     bbox: Tuple[int, int, int, int],
-    block_size: int = 10
+    block_size: int = 15
 ) -> np.ndarray:
     """
     얼굴 영역에 모자이크 효과를 적용합니다.
@@ -23,8 +23,8 @@ def apply_mosaic(
     Args:
         image: 입력 이미지 (BGR 형식)
         bbox: 바운딩 박스 (x, y, width, height)
-        block_size: 모자이크 블록 크기 (픽셀, 작을수록 블록이 큼, 기본값: 10)
-                    예: block_size=10이면 100x100 영역이 10x10으로 축소되어 큰 블록 생성
+        block_size: 모자이크 블록 크기 (픽셀, 작을수록 블록이 큼, 기본값: 15)
+                    예: block_size=15이면 100x100 영역이 약 7x7로 축소되어 큰 블록 생성
     
     Returns:
         처리된 이미지 (원본 수정)
@@ -126,7 +126,7 @@ def process_faces(
         bboxes: 얼굴 바운딩 박스 리스트
         method: 처리 방법 ('mosaic' 또는 'blur')
         **kwargs: 처리 방법별 추가 파라미터
-            - mosaic: block_size (기본값: 10, 작을수록 블록이 큼)
+            - mosaic: block_size (기본값: 15, 작을수록 블록이 큼)
             - blur: kernel_size (기본값: 51)
     
     Returns:
@@ -138,7 +138,7 @@ def process_faces(
     # 각 얼굴에 처리 적용
     for bbox in bboxes:
         if method == "mosaic":
-            block_size = kwargs.get("block_size", 10)
+            block_size = kwargs.get("block_size", 15)
             apply_mosaic(result, bbox, block_size)
         elif method == "blur":
             kernel_size = kwargs.get("kernel_size", 51)

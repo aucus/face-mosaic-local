@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import List, Optional, Tuple
 import cv2
 import numpy as np
-from PIL import Image, ExifTags, ImageOps
+from PIL import Image, ImageOps
 
 
 # 지원하는 이미지 확장자
@@ -50,7 +50,7 @@ def get_image_files(folder: str, recursive: bool = False) -> List[Path]:
     return sorted(image_files)
 
 
-def load_image(path: str) -> Tuple[np.ndarray, Optional[dict]]:
+def load_image(path: str) -> Tuple[np.ndarray, Optional[bytes]]:
     """
     이미지 파일을 로드하고 EXIF 메타데이터를 보존합니다.
     
@@ -58,49 +58,40 @@ def load_image(path: str) -> Tuple[np.ndarray, Optional[dict]]:
         path: 이미지 파일 경로
     
     Returns:
-        (이미지 배열 (BGR), EXIF 메타데이터 딕셔너리) 튜플
+        (이미지 배열 (BGR), EXIF raw bytes) 튜플
     """
     path_obj = Path(path)
     
     if not path_obj.exists():
         raise FileNotFoundError(f"파일을 찾을 수 없습니다: {path}")
     
-    # Pillow로 로드 (EXIF 메타데이터 보존)
+    # Pillow로 로드
     pil_image = Image.open(path)
     
-    # EXIF 메타데이터 추출
-    exif_data = {}
-    if hasattr(pil_image, "_getexif") and pil_image._getexif() is not None:
-        exif_dict = pil_image._getexif()
-        for tag_id, value in exif_dict.items():
-            tag = ExifTags.TAGS.get(tag_id, tag_id)
-            exif_data[tag] = value
+    # EXIF raw bytes 보존 (저장 시 그대로 전달하기 위함)
+    exif_bytes = pil_image.info.get("exif", None)
     
     # EXIF Orientation 적용 (세로 사진 등 회전 정보 반영)
     pil_image = ImageOps.exif_transpose(pil_image)
-    # 저장 시 이중 회전 방지: 적용된 픽셀에 맞게 Orientation을 정상(1)으로 설정
-    if exif_data and exif_data.get("Orientation", 1) != 1:
-        exif_data["Orientation"] = 1
     
     # OpenCV 형식으로 변환 (BGR)
     image_array = np.array(pil_image)
     
-    # RGB → BGR 변환 (PIL은 RGB, OpenCV는 BGR)
+    # RGB → BGR 변환
     if len(image_array.shape) == 3:
         if image_array.shape[2] == 3:
             image_array = cv2.cvtColor(image_array, cv2.COLOR_RGB2BGR)
         elif image_array.shape[2] == 4:
-            # RGBA → BGRA
             image_array = cv2.cvtColor(image_array, cv2.COLOR_RGBA2BGRA)
     
-    return image_array, exif_data if exif_data else None
+    return image_array, exif_bytes
 
 
 def save_image(
     image: np.ndarray,
     path: str,
     quality: int = 95,
-    exif_data: Optional[dict] = None
+    exif_data: Optional[bytes] = None
 ) -> None:
     """
     이미지를 저장하고 EXIF 메타데이터를 보존합니다.
@@ -109,14 +100,14 @@ def save_image(
         image: 저장할 이미지 (BGR 형식)
         path: 저장 경로
         quality: JPEG 품질 (1-100, 기본값: 95)
-        exif_data: EXIF 메타데이터 (선택)
+        exif_data: EXIF raw bytes (load_image()에서 받은 값)
     """
     path_obj = Path(path)
     
     # 출력 디렉토리 생성
     path_obj.parent.mkdir(parents=True, exist_ok=True)
     
-    # BGR → RGB 변환 (OpenCV는 BGR, PIL은 RGB)
+    # BGR → RGB 변환
     if len(image.shape) == 3:
         if image.shape[2] == 3:
             image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -130,24 +121,17 @@ def save_image(
     # PIL Image로 변환
     pil_image = Image.fromarray(image_rgb)
     
-    # EXIF 메타데이터 저장 (지원되는 경우)
-    if exif_data and path_obj.suffix.lower() in {".jpg", ".jpeg"}:
-        try:
-            # EXIF 데이터를 PIL 형식으로 변환
-            exif_bytes = pil_image.info.get("exif")
-            if exif_bytes:
-                pil_image.save(path, quality=quality, exif=exif_bytes)
-            else:
-                pil_image.save(path, quality=quality)
-        except Exception:
-            # EXIF 저장 실패 시 일반 저장
-            pil_image.save(path, quality=quality)
+    # 저장
+    is_jpeg = path_obj.suffix.lower() in {".jpg", ".jpeg"}
+    
+    if is_jpeg:
+        save_kwargs = {"quality": quality}
+        # EXIF raw bytes가 있으면 그대로 전달
+        if exif_data and isinstance(exif_data, bytes):
+            save_kwargs["exif"] = exif_data
+        pil_image.save(path, **save_kwargs)
     else:
-        # PNG, BMP 등은 품질 파라미터 무시
-        if path_obj.suffix.lower() in {".jpg", ".jpeg"}:
-            pil_image.save(path, quality=quality)
-        else:
-            pil_image.save(path)
+        pil_image.save(path)
 
 
 def setup_logger(

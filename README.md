@@ -49,7 +49,13 @@ venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 4. DNN 모델 다운로드 (선택사항)
+### 개발 환경 설정 (테스트/빌드 포함)
+
+```bash
+pip install -r requirements-dev.txt
+```
+
+### 4. DNN 모델 다운로드 (DNN 감지기 사용 시 필수)
 
 DNN 감지기를 사용하려면 모델 파일을 다운로드해야 합니다:
 

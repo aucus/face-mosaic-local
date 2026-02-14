@@ -44,7 +44,7 @@ output_*/       # 테스트 출력 폴더들
 .coverage
 htmlcov/
 
-# 모델 파일 (큰 파일, 별도 다운로드 필요)
+# DNN 모델 파일 (download_models.py로 다운로드)
 models/*.caffemodel
 
 # OS

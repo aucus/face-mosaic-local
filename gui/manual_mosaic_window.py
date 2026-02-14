@@ -289,7 +289,7 @@ class ManualMosaicWidget(QWidget):
         self.current_image: Optional[np.ndarray] = None
         self.current_exif: Optional[dict] = None
         self.method = "mosaic"  # "mosaic" or "blur"
-        self.mosaic_size = 10
+        self.mosaic_size = 15
         self.blur_kernel_size = 51
         self.logo_path = ""
         self.logo_scale = 0.2
@@ -395,10 +395,10 @@ class ManualMosaicWidget(QWidget):
         self.mosaic_slider = QSlider(Qt.Horizontal)
         self.mosaic_slider.setMinimum(1)
         self.mosaic_slider.setMaximum(50)
-        self.mosaic_slider.setValue(10)
+        self.mosaic_slider.setValue(15)
         self.mosaic_slider.valueChanged.connect(self.update_mosaic_size)
         self.mosaic_size_layout.addWidget(self.mosaic_slider)
-        self.mosaic_size_label = QLabel("10")
+        self.mosaic_size_label = QLabel("15")
         self.mosaic_size_label.setMinimumWidth(30)
         self.mosaic_size_layout.addWidget(self.mosaic_size_label)
         method_layout.addLayout(self.mosaic_size_layout)
@@ -701,17 +701,46 @@ class ManualMosaicWidget(QWidget):
     def prev_image(self):
         """이전 이미지"""
         if self.current_image_index > 0:
-            self.load_image(self.current_image_index - 1)
-    
+            if self._check_unsaved_changes():
+                self.load_image(self.current_image_index - 1)
+
     def next_image(self):
         """다음 이미지"""
         if self.current_image_index < len(self.image_files) - 1:
-            self.load_image(self.current_image_index + 1)
+            if self._check_unsaved_changes():
+                self.load_image(self.current_image_index + 1)
     
     def clear_regions(self):
         """선택 영역 초기화"""
         self.image_label.clear_regions()
-    
+
+    def _check_unsaved_changes(self) -> bool:
+        """
+        미저장 변경사항 확인.
+
+        Returns:
+            True: 진행해도 됨 (변경 없음 / 사용자가 허용)
+            False: 진행 취소
+        """
+        if not self.image_label.selected_regions:
+            return True
+
+        reply = QMessageBox.question(
+            self,
+            "미저장 경고",
+            "선택한 모자이크 영역이 저장되지 않았습니다.\n저장하지 않고 이동하시겠습니까?",
+            QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel,
+            QMessageBox.Cancel
+        )
+
+        if reply == QMessageBox.Save:
+            self.save_image()
+            return True
+        elif reply == QMessageBox.Discard:
+            return True
+        else:  # Cancel
+            return False
+
     def save_image(self):
         """처리된 이미지 저장"""
         if self.current_image is None:

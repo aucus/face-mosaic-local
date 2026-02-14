@@ -19,7 +19,7 @@ class TestFaceMosaicProcessor:
         processor = FaceMosaicProcessor(detector_type="haar")
         assert processor is not None
         assert processor.method == "mosaic"
-        assert processor.mosaic_size == 10  # 기본값이 10으로 변경됨
+        assert processor.mosaic_size == 15  # 기본값 15
     
     def test_init_with_custom_params(self):
         """커스텀 파라미터로 초기화 테스트"""

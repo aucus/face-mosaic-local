@@ -1,0 +1,9 @@
+# Face Mosaic Local - 개발/빌드 의존성
+
+-r requirements.txt
+
+# 테스트
+pytest>=7.4.0
+
+# 배포 빌드
+pyinstaller>=6.0.0

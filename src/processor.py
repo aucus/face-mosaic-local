@@ -6,7 +6,7 @@
 
 import time
 from pathlib import Path
-from typing import Dict, Optional, Tuple
+from typing import Callable, Dict, Optional, Tuple
 import cv2
 import numpy as np
 from tqdm import tqdm
@@ -25,7 +25,7 @@ class FaceMosaicProcessor:
         detector_type: str = "dnn",
         detector_kwargs: Optional[Dict] = None,
         method: str = "mosaic",
-        mosaic_size: int = 10,
+        mosaic_size: int = 15,
         blur_kernel_size: int = 51,
         quality: int = 95,
         logo_path: Optional[str] = None,
@@ -122,6 +122,18 @@ class FaceMosaicProcessor:
             
             return True, len(faces)
         
+        except MemoryError:
+            self.logger.critical(f"메모리 부족: {input_path}")
+            raise  # 상위로 전파하여 일괄 처리 중단
+
+        except OSError as e:
+            # 디스크 공간 부족 등 치명적 I/O 에러는 상위로 전파
+            if e.errno == 28 or "No space left" in str(e):
+                self.logger.critical(f"디스크 공간 부족: {e}")
+                raise
+            self.logger.error(f"파일 I/O 오류: {input_path} - {e}")
+            return False, 0
+
         except Exception as e:
             self.logger.error(f"이미지 처리 실패: {input_path} - {e}")
             return False, 0
@@ -130,7 +142,8 @@ class FaceMosaicProcessor:
         self,
         input_dir: str,
         output_dir: str,
-        recursive: bool = False
+        recursive: bool = False,
+        cancel_check: Optional[Callable[[], bool]] = None
     ) -> Dict:
         """
         폴더 내 모든 이미지를 일괄 처리합니다.
@@ -175,29 +188,39 @@ class FaceMosaicProcessor:
         self.logger.info(f"처리 시작: {self.stats['total']}개 이미지")
         
         # 진행률 표시와 함께 처리
-        for image_file in tqdm(image_files, desc="처리 중", unit="장"):
-            # 상대 경로 유지 (재귀 처리 시)
-            if recursive:
-                relative_path = image_file.relative_to(Path(input_dir))
-                output_file = output_path / relative_path
-            else:
-                output_file = output_path / image_file.name
-            
-            # 출력 디렉토리 생성
-            output_file.parent.mkdir(parents=True, exist_ok=True)
-            
-            # 이미지 처리
-            success, face_count = self.process_image(str(image_file), str(output_file))
-            
-            if success:
-                self.stats["success"] += 1
-                self.stats["faces_detected"] += face_count
-                
-                if face_count == 0:
-                    self.stats["skipped"] += 1  # 얼굴이 없는 이미지
-            else:
-                self.stats["failed"] += 1
-        
+        try:
+            for image_file in tqdm(image_files, desc="처리 중", unit="장"):
+                # 취소 체크
+                if cancel_check and cancel_check():
+                    self.logger.info("사용자에 의해 처리가 취소되었습니다.")
+                    break
+
+                # 상대 경로 유지 (재귀 처리 시)
+                if recursive:
+                    relative_path = image_file.relative_to(Path(input_dir))
+                    output_file = output_path / relative_path
+                else:
+                    output_file = output_path / image_file.name
+
+                # 출력 디렉토리 생성
+                output_file.parent.mkdir(parents=True, exist_ok=True)
+
+                # 이미지 처리
+                success, face_count = self.process_image(str(image_file), str(output_file))
+
+                if success:
+                    self.stats["success"] += 1
+                    self.stats["faces_detected"] += face_count
+
+                    if face_count == 0:
+                        self.stats["skipped"] += 1
+                else:
+                    self.stats["failed"] += 1
+
+        except (MemoryError, OSError) as e:
+            self.logger.critical(f"치명적 오류로 처리 중단: {e}")
+            self.stats["failed"] += 1
+
         # 처리 시간 계산
         self.stats["processing_time"] = time.time() - start_time
         

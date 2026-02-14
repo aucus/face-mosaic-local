@@ -64,8 +64,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--mosaic-size",
         type=int,
-        default=10,
-        help="모자이크 블록 크기 (작을수록 블록이 큼, 기본값: 10)"
+        default=15,
+        help="모자이크 블록 크기 (1-50, 값이 작을수록 모자이크가 강함, 기본값: 15)"
     )
     
     parser.add_argument(

@@ -37,12 +37,25 @@ class ProcessingThread(QThread):
         self.processor = processor
         self.input_folder = input_folder
         self.output_folder = output_folder
+        self._cancelled = False
+    
+    def cancel(self):
+        """처리 취소 요청"""
+        self._cancelled = True
     
     def run(self):
         try:
             self.progress.emit("처리 시작...")
-            stats = self.processor.process_folder(self.input_folder, self.output_folder)
+            stats = self.processor.process_folder(
+                self.input_folder,
+                self.output_folder,
+                cancel_check=lambda: self._cancelled
+            )
+            if self._cancelled:
+                self.progress.emit("처리가 취소되었습니다.")
             self.finished.emit(stats)
+        except (MemoryError, OSError) as e:
+            self.error.emit(f"치명적 오류: {e}")
         except Exception as e:
             self.error.emit(str(e))
 
@@ -67,7 +80,7 @@ class FaceMosaicGUI(QMainWindow):
         self.output_folder = default_output
         self.detector_type = "dnn"
         self.method = "mosaic"
-        self.mosaic_size = 10
+        self.mosaic_size = 15
         self.confidence = 0.5
         self.logo_path = ""
         self.logo_scale = 0.2  # 기본값 2배 증가 (0.1 → 0.2)
@@ -263,10 +276,10 @@ class FaceMosaicGUI(QMainWindow):
         self.mosaic_slider = QSlider(Qt.Horizontal)
         self.mosaic_slider.setMinimum(1)
         self.mosaic_slider.setMaximum(50)
-        self.mosaic_slider.setValue(10)
+        self.mosaic_slider.setValue(15)
         self.mosaic_slider.valueChanged.connect(self.update_mosaic_size_label)
         mosaic_layout.addWidget(self.mosaic_slider)
-        self.mosaic_size_label = QLabel("10")
+        self.mosaic_size_label = QLabel("15")
         self.mosaic_size_label.setMinimumWidth(30)
         mosaic_layout.addWidget(self.mosaic_size_label)
         options_layout.addLayout(mosaic_layout)
@@ -595,8 +608,11 @@ class FaceMosaicGUI(QMainWindow):
                 return
             
             if self.processing_thread and self.processing_thread.isRunning():
-                self.processing_thread.terminate()
-                self.processing_thread.wait()
+                self.processing_thread.cancel()
+                # 현재 이미지 처리 완료까지 최대 10초 대기
+                if not self.processing_thread.wait(10000):
+                    self.processing_thread.terminate()
+                    self.processing_thread.wait(2000)
         
         event.accept()
 
