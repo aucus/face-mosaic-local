@@ -3,191 +3,216 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Face Mosaic Local — 오프라인 얼굴 모자이크</title>
-  <style>
-    :root {
-      --bg: #0d1117;
-      --bg-soft: #161b22;
-      --border: #30363d;
-      --text: #e6edf3;
-      --text-muted: #8b949e;
-      --accent: #58a6ff;
-      --accent-hover: #79b8ff;
-      --success: #3fb950;
-      --card: #21262d;
+  <title>Face Mosaic Local — 100% 오프라인 AI 얼굴 모자이크</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            border: 'oklch(0.3 0 0)',
+            background: 'oklch(0.15 0 0)',
+            foreground: 'oklch(0.98 0 0)',
+            primary: 'oklch(0.7 0.2 250)', // Modern Blue
+            secondary: 'oklch(0.35 0 0)',
+            accent: 'oklch(0.85 0.15 150)', // Success Green
+          }
+        }
+      }
     }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.6;
+  </script>
+  
+  <style type="text/tailwindcss">
+    @layer base {
+      body {
+        @apply bg-background text-foreground antialiased selection:bg-primary/30;
+      }
     }
-    .container { max-width: 720px; margin: 0 auto; padding: 2rem 1.5rem; }
-    header {
-      text-align: center;
-      padding: 3rem 0 2rem;
-      border-bottom: 1px solid var(--border);
+    
+    .glass {
+      @apply bg-white/5 backdrop-blur-xl border border-white/10;
     }
-    h1 {
-      font-size: 1.75rem;
-      font-weight: 600;
-      margin: 0 0 0.5rem;
+    
+    .hero-gradient {
+      background: radial-gradient(circle at 50% 50%, oklch(0.4 0.15 250 / 0.15) 0%, transparent 50%);
     }
-    .tagline {
-      color: var(--text-muted);
-      font-size: 1.05rem;
-    }
-    section {
-      padding: 2.5rem 0;
-      border-bottom: 1px solid var(--border);
-    }
-    section:last-of-type { border-bottom: none; }
-    h2 {
-      font-size: 1.25rem;
-      margin: 0 0 1rem;
-      color: var(--text);
-    }
-    .features {
-      display: grid;
-      gap: 1rem;
-    }
-    .feature {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 1rem 1.25rem;
-    }
-    .feature strong { color: var(--accent); }
-    .compare {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1rem;
-      align-items: start;
-    }
-    @media (max-width: 560px) { .compare { grid-template-columns: 1fr; } }
-    .compare figcaption {
-      margin-top: 0.5rem;
-      font-size: 0.9rem;
-      color: var(--text-muted);
-    }
-    .compare img {
-      width: 100%;
-      height: auto;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      background: var(--bg-soft);
-    }
-    .compare .placeholder {
-      aspect-ratio: 4/3;
-      background: var(--card);
-      border-radius: 8px;
-      border: 1px dashed var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--text-muted);
-      font-size: 0.9rem;
-    }
-    .cta {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1rem;
-      margin-top: 1.5rem;
-    }
-    .btn {
-      display: inline-block;
-      padding: 0.75rem 1.5rem;
-      border-radius: 8px;
-      font-weight: 600;
-      text-decoration: none;
-      transition: background 0.2s, color 0.2s;
-    }
-    .btn-primary {
-      background: var(--accent);
-      color: var(--bg);
-    }
-    .btn-primary:hover { background: var(--accent-hover); color: var(--bg); }
-    .btn-secondary {
-      background: var(--card);
-      color: var(--text);
-      border: 1px solid var(--border);
-    }
-    .btn-secondary:hover { background: var(--bg-soft); }
-    .install-guide {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 1rem 1.25rem;
-    }
-    .install-guide a { color: var(--accent); }
-    .install-guide a:hover { text-decoration: underline; }
-    footer {
-      padding: 2rem 0;
-      text-align: center;
-      color: var(--text-muted);
-      font-size: 0.9rem;
+
+    .feature-card:hover {
+      @apply border-white/20 bg-white/[0.07] transition-all duration-300 -translate-y-1;
     }
   </style>
 </head>
-<body>
-  <div class="container">
-    <header>
-      <h1>🖼️ Face Mosaic Local</h1>
-      <p class="tagline">폴더째로 드래그하면 얼굴 모자이크 끝!</p>
-    </header>
+<body class="overflow-x-hidden">
 
-    <section>
-      <h2>한 줄 요약</h2>
-      <p>100% 오프라인으로 동작하는 AI 기반 얼굴 모자이크 배치 처리 프로그램입니다. 이미지는 절대 외부로 전송되지 않습니다.</p>
-    </section>
-
-    <section>
-      <h2>주요 특징</h2>
-      <div class="features">
-        <div class="feature"><strong>오프라인</strong> — 인터넷 없이 로컬에서만 처리</div>
-        <div class="feature"><strong>프라이버시</strong> — 서버 전송 없음, 데이터는 사용자 PC에만 존재</div>
-        <div class="feature"><strong>일괄 처리</strong> — 폴더 단위로 드래그하여 한 번에 처리</div>
-        <div class="feature"><strong>EXIF 보존</strong> — 원본 메타데이터 유지</div>
+  <!-- Nav -->
+  <nav class="fixed top-0 w-full z-50 glass border-b border-white/5 py-4">
+    <div class="container mx-auto px-6 flex justify-between items-center">
+      <div class="flex items-center gap-2">
+        <span class="text-2xl">🖼️</span>
+        <span class="font-bold text-xl tracking-tight">Face Mosaic Local</span>
       </div>
-    </section>
-
-    <section>
-      <h2>비포 / 애프터</h2>
-      <p class="text-muted" style="color: var(--text-muted); margin-bottom: 1rem;">예시 이미지는 <code>input/</code> 폴더의 샘플로 구성할 수 있습니다.</p>
-      <div class="compare">
-        <figure>
-          <div class="placeholder">원본 이미지<br>(input 예시)</div>
-          <figcaption>처리 전</figcaption>
-        </figure>
-        <figure>
-          <div class="placeholder">모자이크 처리 결과<br>(output 예시)</div>
-          <figcaption>처리 후</figcaption>
-        </figure>
+      <div class="flex items-center gap-6">
+        <a href="https://github.com/aucus/face-mosaic-local" target="_blank" class="text-sm font-medium opacity-70 hover:opacity-100 transition-opacity flex items-center gap-1">
+          <i data-lucide="github" class="w-4 h-4"></i> GitHub
+        </a>
+        <a href="https://smartstore.naver.com/" target="_blank" class="bg-primary text-white px-4 py-2 rounded-full text-sm font-semibold hover:brightness-110 transition-all">
+          Pro 구매하기
+        </a>
       </div>
-    </section>
+    </div>
+  </nav>
 
-    <section>
-      <h2>다운로드 및 구매</h2>
-      <p>무료 버전(배치 5장/회, 워터마크 포함)은 GitHub에서, Pro 버전(무제한)은 네이버 스마트스토어에서 구매할 수 있습니다.</p>
-      <div class="cta">
-        <a href="https://smartstore.naver.com/" class="btn btn-primary" target="_blank" rel="noopener">스마트스토어에서 구매하기</a>
-        <a href="https://github.com/" class="btn btn-secondary" target="_blank" rel="noopener">GitHub에서 보기</a>
+  <!-- Hero Section -->
+  <header class="relative pt-40 pb-24 overflow-hidden hero-gradient">
+    <div class="container mx-auto px-6 text-center relative z-10">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full glass text-xs font-semibold text-primary mb-6 animate-fade-in">
+        <span class="relative flex h-2 w-2">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+        </span>
+        100% Privacy-Focused
       </div>
-    </section>
-
-    <section>
-      <h2>설치 및 보안 가이드</h2>
-      <div class="install-guide">
-        <p>macOS·Windows에서 처음 실행 시 "확인되지 않은 개발자" 또는 SmartScreen 경고가 나올 수 있습니다. 아래 가이드를 참고해 안전하게 실행하세요.</p>
-        <p><a href="INSTALL_GUIDE.md">📄 설치 가이드 (INSTALL_GUIDE.md)</a></p>
+      <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-b from-white to-white/60 leading-tight">
+        폴더째로 드래그하면<br/>얼굴 모자이크 끝.
+      </h1>
+      <p class="text-xl md:text-2xl text-white/60 max-w-2xl mx-auto mb-10 leading-relaxed">
+        내 소중한 사진을 왜 서버에 올리시나요?<br/>
+        AI가 로컬에서 안전하고 빠르게 당신의 프라이버시를 지켜드립니다.
+      </p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+        <a href="https://smartstore.naver.com/" target="_blank" class="w-full sm:w-auto bg-white text-black px-8 py-4 rounded-2xl font-bold text-lg hover:scale-105 transition-transform flex items-center justify-center gap-2 shadow-2xl shadow-white/10">
+          <i data-lucide="shopping-cart" class="w-5 h-5"></i> 스마트스토어 Pro 구매
+        </a>
+        <a href="https://github.com/aucus/face-mosaic-local" target="_blank" class="w-full sm:w-auto glass px-8 py-4 rounded-2xl font-bold text-lg hover:bg-white/10 transition-all flex items-center justify-center gap-2 border border-white/10">
+          <i data-lucide="download" class="w-5 h-5"></i> 무료 버전 (GitHub)
+        </a>
       </div>
-    </section>
+    </div>
+    
+    <!-- Hero Mockup Placeholder -->
+    <div class="mt-20 container mx-auto px-6 max-w-5xl">
+      <div class="glass rounded-3xl p-4 md:p-8 shadow-2xl animate-slide-up">
+        <div class="bg-black/40 rounded-xl aspect-video flex flex-col items-center justify-center border border-white/5">
+           <i data-lucide="monitor" class="w-16 h-16 opacity-20 mb-4"></i>
+           <p class="text-white/30 font-mono text-sm">GUI Preview (Will be replaced with screenshots in Week 2)</p>
+        </div>
+      </div>
+    </div>
+  </header>
 
-    <footer>
-      Face Mosaic Local — 오프라인 얼굴 모자이크 · 프라이버시 우선
-    </footer>
-  </div>
+  <!-- Features Grid -->
+  <section class="py-24 bg-white/[0.02]">
+    <div class="container mx-auto px-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="feature-card glass p-8 rounded-3xl border border-white/5 transition-all">
+          <div class="w-12 h-12 rounded-2xl bg-primary/20 flex items-center justify-center text-primary mb-6">
+            <i data-lucide="shield-check"></i>
+          </div>
+          <h3 class="text-xl font-bold mb-3">100% 오프라인</h3>
+          <p class="text-white/50 text-sm leading-relaxed">인터넷 연결이 필요 없습니다. 모든 작업은 마스터의 컴퓨터에서만 처리됩니다.</p>
+        </div>
+        
+        <div class="feature-card glass p-8 rounded-3xl border border-white/5 transition-all">
+          <div class="w-12 h-12 rounded-2xl bg-accent/20 flex items-center justify-center text-accent mb-6">
+            <i data-lucide="layers"></i>
+          </div>
+          <h3 class="text-xl font-bold mb-3">초고속 배치 처리</h3>
+          <p class="text-white/50 text-sm leading-relaxed">폴더를 드래그 앤 드롭 하세요. 수백 장의 사진도 단 몇 분 만에 모자이크가 완료됩니다.</p>
+        </div>
+
+        <div class="feature-card glass p-8 rounded-3xl border border-white/5 transition-all">
+          <div class="w-12 h-12 rounded-2xl bg-orange-500/20 flex items-center justify-center text-orange-500 mb-6">
+            <i data-lucide="cpu"></i>
+          </div>
+          <h3 class="text-xl font-bold mb-3">DNN 기반 감지</h3>
+          <p class="text-white/50 text-sm leading-relaxed">최신 인공신경망 기술을 적용하여 측면 얼굴이나 기울어진 얼굴도 정확하게 잡아냅니다.</p>
+        </div>
+
+        <div class="feature-card glass p-8 rounded-3xl border border-white/5 transition-all">
+          <div class="w-12 h-12 rounded-2xl bg-purple-500/20 flex items-center justify-center text-purple-500 mb-6">
+            <i data-lucide="image"></i>
+          </div>
+          <h3 class="text-xl font-bold mb-3">데이터 완벽 보존</h3>
+          <p class="text-white/50 text-sm leading-relaxed">모자이크 후에도 사진의 날짜, 카메라 기종, GPS 등 원본 EXIF 정보를 그대로 유지합니다.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Comparison Section -->
+  <section class="py-24">
+    <div class="container mx-auto px-6 max-w-4xl">
+      <h2 class="text-3xl md:text-4xl font-bold text-center mb-16 italic">"한 장씩 하던 시대는 끝났습니다."</h2>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="space-y-4">
+          <div class="aspect-[4/3] rounded-2xl bg-secondary/20 border border-white/5 overflow-hidden flex items-center justify-center relative">
+            <img src="https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=800&q=80" alt="Before" class="object-cover w-full h-full opacity-80" />
+            <div class="absolute top-4 left-4 glass px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-widest">Original</div>
+          </div>
+          <p class="text-center text-white/40 text-sm">리뷰를 위해 찍은 수많은 맛집 사진들</p>
+        </div>
+        
+        <div class="space-y-4">
+          <div class="aspect-[4/3] rounded-2xl bg-secondary/20 border border-primary/30 overflow-hidden flex items-center justify-center relative group">
+            <img src="https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=800&q=80" alt="After" class="object-cover w-full h-full blur-md" />
+            <div class="absolute top-4 left-4 bg-primary px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-widest text-white shadow-xl shadow-primary/50">Mosaic Active</div>
+            <!-- Overlay logic mock -->
+            <div class="absolute inset-0 bg-primary/10 group-hover:bg-transparent transition-all"></div>
+          </div>
+          <p class="text-center text-white/40 text-sm italic">클릭 한 번으로 끝나는 개인정보 보호</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing / CTA Card -->
+  <section class="py-24">
+    <div class="container mx-auto px-6">
+      <div class="max-w-3xl mx-auto glass p-12 rounded-[3rem] text-center border-white/10 shadow-[0_0_100px_rgba(255,255,255,0.05)]">
+        <h2 class="text-4xl font-bold mb-6">Pro 버전으로 무제한 자유를.</h2>
+        <div class="text-5xl font-extrabold mb-8 text-primary font-mono leading-none">₩9,900</div>
+        
+        <ul class="text-left max-w-sm mx-auto space-y-4 mb-12 text-white/70">
+          <li class="flex items-center gap-3"><i data-lucide="check-circle-2" class="w-5 h-5 text-accent"></i> 1회 처리 사진 개수 무제한</li>
+          <li class="flex items-center gap-3"><i data-lucide="check-circle-2" class="w-5 h-5 text-accent"></i> 워터마크 자동 제거</li>
+          <li class="flex items-center gap-3"><i data-lucide="check-circle-2" class="w-5 h-5 text-accent"></i> 평생 소장 및 무료 업데이트</li>
+          <li class="flex items-center gap-3"><i data-lucide="check-circle-2" class="w-5 h-5 text-accent"></i> Windows & macOS 동시 지원</li>
+        </ul>
+
+        <a href="https://smartstore.naver.com/" target="_blank" class="inline-flex bg-primary text-white px-12 py-5 rounded-3xl font-bold text-xl hover:scale-105 transition-all shadow-2xl shadow-primary/20">
+          지금 바로 구매하기
+        </a>
+        <p class="mt-6 text-white/30 text-sm underline underline-offset-4 decoration-white/10">
+          <a href="INSTALL_GUIDE.md">설치 및 보안 가이드 바로가기</a>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="py-12 border-t border-white/5 opacity-40">
+    <div class="container mx-auto px-6 text-center text-sm">
+      <p>© 2026 Face Mosaic Local. All rights reserved.</p>
+      <p class="mt-2 font-mono">Developed for Privacy, Built for Bloggers.</p>
+    </div>
+  </footer>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    lucide.createIcons();
+  </script>
 </body>
 </html>

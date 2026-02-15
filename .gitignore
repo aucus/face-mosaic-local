@@ -37,6 +37,7 @@ ENV/
 input/          # 테스트 입력 이미지
 output/         # 처리 결과 이미지
 output_*/       # 테스트 출력 폴더들
+logo/           # 작업용 로고/이미지 (공개 제외)
 *.log           # 로그 파일
 tools/LICENSE_KEYS.md  # 라이선스 키 (절대 공개 금지)
 
