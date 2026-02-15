@@ -21,39 +21,58 @@
             mono: ['JetBrains Mono', 'monospace'],
           },
           colors: {
-            border: 'oklch(0.3 0 0)',
-            background: 'oklch(0.15 0 0)',
-            foreground: 'oklch(0.98 0 0)',
-            primary: 'oklch(0.7 0.2 250)', // Modern Blue
-            secondary: 'oklch(0.35 0 0)',
-            accent: 'oklch(0.85 0.15 150)', // Success Green
+            brand: {
+              background: '#0a0a0a',
+              foreground: '#ffffff',
+              primary: '#3b82f6',
+              secondary: '#1a1a1a',
+              accent: '#10b981',
+            }
           }
         }
       }
     }
   </script>
   
-  <style type="text/tailwindcss">
-    @layer base {
-      body {
-        @apply bg-background text-foreground antialiased selection:bg-primary/30;
-      }
+  <style>
+    :root {
+      --background: #0a0a0a;
+      --foreground: #ffffff;
+      --primary: #3b82f6;
+      --secondary: #1a1a1a;
+      --accent: #10b981;
+    }
+    
+    body {
+      background-color: var(--background);
+      color: var(--foreground);
+      font-family: 'Inter', sans-serif;
+      margin: 0;
     }
     
     .glass {
-      @apply bg-white/5 backdrop-blur-xl border border-white/10;
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
     }
     
     .hero-gradient {
-      background: radial-gradient(circle at 50% 50%, oklch(0.4 0.15 250 / 0.15) 0%, transparent 50%);
+      background: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.1) 0%, transparent 50%);
+    }
+
+    .feature-card {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .feature-card:hover {
-      @apply border-white/20 bg-white/[0.07] transition-all duration-300 -translate-y-1;
+      border-color: rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.06);
+      transform: translateY(-4px);
     }
   </style>
 </head>
-<body class="overflow-x-hidden">
+<body class="overflow-x-hidden antialiased">
 
   <!-- Nav -->
   <nav class="fixed top-0 w-full z-50 glass border-b border-white/5 py-4">
@@ -63,10 +82,10 @@
         <span class="font-bold text-xl tracking-tight">Face Mosaic Local</span>
       </div>
       <div class="flex items-center gap-6">
-        <a href="https://github.com/aucus/face-mosaic-local" target="_blank" class="text-sm font-medium opacity-70 hover:opacity-100 transition-opacity flex items-center gap-1">
-          <i data-lucide="github" class="w-4 h-4"></i> GitHub
+        <a href="https://github.com/aucus/face-mosaic-local" target="_blank" class="hidden sm:flex text-sm font-medium opacity-70 hover:opacity-100 transition-opacity items-center gap-1">
+          GitHub
         </a>
-        <a href="https://smartstore.naver.com/" target="_blank" class="bg-primary text-white px-4 py-2 rounded-full text-sm font-semibold hover:brightness-110 transition-all">
+        <a href="https://smartstore.naver.com/" target="_blank" class="bg-blue-600 text-white px-5 py-2 rounded-full text-sm font-bold hover:bg-blue-500 transition-all shadow-lg shadow-blue-600/20">
           Pro 구매하기
         </a>
       </div>
@@ -76,75 +95,69 @@
   <!-- Hero Section -->
   <header class="relative pt-40 pb-24 overflow-hidden hero-gradient">
     <div class="container mx-auto px-6 text-center relative z-10">
-      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full glass text-xs font-semibold text-primary mb-6 animate-fade-in">
+      <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-8">
         <span class="relative flex h-2 w-2">
-          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-          <span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
         </span>
-        100% Privacy-Focused
+        100% Privacy-Focused AI
       </div>
-      <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-b from-white to-white/60 leading-tight">
+      <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight mb-8 bg-clip-text text-transparent bg-gradient-to-b from-white to-white/50 leading-tight">
         폴더째로 드래그하면<br/>얼굴 모자이크 끝.
       </h1>
-      <p class="text-xl md:text-2xl text-white/60 max-w-2xl mx-auto mb-10 leading-relaxed">
+      <p class="text-lg md:text-xl text-white/50 max-w-2xl mx-auto mb-12 leading-relaxed">
         내 소중한 사진을 왜 서버에 올리시나요?<br/>
-        AI가 로컬에서 안전하고 빠르게 당신의 프라이버시를 지켜드립니다.
+        AI가 내 컴퓨터에서 안전하게 프라이버시를 지켜드립니다.
       </p>
       <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
-        <a href="https://smartstore.naver.com/" target="_blank" class="w-full sm:w-auto bg-white text-black px-8 py-4 rounded-2xl font-bold text-lg hover:scale-105 transition-transform flex items-center justify-center gap-2 shadow-2xl shadow-white/10">
-          <i data-lucide="shopping-cart" class="w-5 h-5"></i> 스마트스토어 Pro 구매
+        <a href="https://smartstore.naver.com/" target="_blank" class="w-full sm:w-auto bg-white text-black px-10 py-4 rounded-2xl font-bold text-lg hover:scale-105 transition-all shadow-2xl shadow-white/10">
+          스마트스토어 Pro 구매
         </a>
-        <a href="https://github.com/aucus/face-mosaic-local" target="_blank" class="w-full sm:w-auto glass px-8 py-4 rounded-2xl font-bold text-lg hover:bg-white/10 transition-all flex items-center justify-center gap-2 border border-white/10">
-          <i data-lucide="download" class="w-5 h-5"></i> 무료 버전 (GitHub)
+        <a href="https://github.com/aucus/face-mosaic-local" target="_blank" class="w-full sm:w-auto glass px-10 py-4 rounded-2xl font-bold text-lg hover:bg-white/10 transition-all border border-white/10">
+          무료 버전 (GitHub)
         </a>
       </div>
     </div>
     
     <!-- Hero Mockup Placeholder -->
-    <div class="mt-20 container mx-auto px-6 max-w-5xl">
-      <div class="glass rounded-3xl p-4 md:p-8 shadow-2xl animate-slide-up">
-        <div class="bg-black/40 rounded-xl aspect-video flex flex-col items-center justify-center border border-white/5">
-           <i data-lucide="monitor" class="w-16 h-16 opacity-20 mb-4"></i>
-           <p class="text-white/30 font-mono text-sm">GUI Preview (Will be replaced with screenshots in Week 2)</p>
+    <div class="mt-24 container mx-auto px-6 max-w-5xl">
+      <div class="glass rounded-[2.5rem] p-3 md:p-6 shadow-2xl border-white/10">
+        <div class="bg-black/60 rounded-[1.8rem] aspect-video flex flex-col items-center justify-center border border-white/5 overflow-hidden">
+           <div class="text-white/20 text-center px-8">
+             <p class="font-mono text-xs uppercase tracking-widest mb-4 opacity-50">GUI Preview</p>
+             <p class="text-sm">2주차 작업 후 실제 실행 화면 스크린샷이 이곳에 들어갑니다.</p>
+           </div>
         </div>
       </div>
     </div>
   </header>
 
   <!-- Features Grid -->
-  <section class="py-24 bg-white/[0.02]">
+  <section class="py-24 bg-white/[0.01]">
     <div class="container mx-auto px-6">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div class="feature-card glass p-8 rounded-3xl border border-white/5 transition-all">
-          <div class="w-12 h-12 rounded-2xl bg-primary/20 flex items-center justify-center text-primary mb-6">
-            <i data-lucide="shield-check"></i>
-          </div>
-          <h3 class="text-xl font-bold mb-3">100% 오프라인</h3>
-          <p class="text-white/50 text-sm leading-relaxed">인터넷 연결이 필요 없습니다. 모든 작업은 마스터의 컴퓨터에서만 처리됩니다.</p>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div class="feature-card glass p-10 rounded-[2rem]">
+          <div class="text-blue-500 mb-6 text-3xl">🛡️</div>
+          <h3 class="text-xl font-bold mb-4">100% 오프라인</h3>
+          <p class="text-white/40 text-sm leading-relaxed font-medium">인터넷 없이 로컬에서만 처리됩니다. 데이터 유출 걱정은 이제 그만.</p>
         </div>
         
-        <div class="feature-card glass p-8 rounded-3xl border border-white/5 transition-all">
-          <div class="w-12 h-12 rounded-2xl bg-accent/20 flex items-center justify-center text-accent mb-6">
-            <i data-lucide="layers"></i>
-          </div>
-          <h3 class="text-xl font-bold mb-3">초고속 배치 처리</h3>
-          <p class="text-white/50 text-sm leading-relaxed">폴더를 드래그 앤 드롭 하세요. 수백 장의 사진도 단 몇 분 만에 모자이크가 완료됩니다.</p>
+        <div class="feature-card glass p-10 rounded-[2rem]">
+          <div class="text-green-500 mb-6 text-3xl">⚡</div>
+          <h3 class="text-xl font-bold mb-4">초고속 배치 처리</h3>
+          <p class="text-white/40 text-sm leading-relaxed font-medium">수백 장의 사진을 폴더째로 던져보세요. AI가 눈 깜짝할 새 끝내드립니다.</p>
         </div>
 
-        <div class="feature-card glass p-8 rounded-3xl border border-white/5 transition-all">
-          <div class="w-12 h-12 rounded-2xl bg-orange-500/20 flex items-center justify-center text-orange-500 mb-6">
-            <i data-lucide="cpu"></i>
-          </div>
-          <h3 class="text-xl font-bold mb-3">DNN 기반 감지</h3>
-          <p class="text-white/50 text-sm leading-relaxed">최신 인공신경망 기술을 적용하여 측면 얼굴이나 기울어진 얼굴도 정확하게 잡아냅니다.</p>
+        <div class="feature-card glass p-10 rounded-[2rem]">
+          <div class="text-orange-500 mb-6 text-3xl">🧠</div>
+          <h3 class="text-xl font-bold mb-4">최신 DNN 감지</h3>
+          <p class="text-white/40 text-sm leading-relaxed font-medium">정교한 인공신경망으로 옆모습, 기울어진 얼굴도 놓치지 않고 찾아냅니다.</p>
         </div>
 
-        <div class="feature-card glass p-8 rounded-3xl border border-white/5 transition-all">
-          <div class="w-12 h-12 rounded-2xl bg-purple-500/20 flex items-center justify-center text-purple-500 mb-6">
-            <i data-lucide="image"></i>
-          </div>
-          <h3 class="text-xl font-bold mb-3">데이터 완벽 보존</h3>
-          <p class="text-white/50 text-sm leading-relaxed">모자이크 후에도 사진의 날짜, 카메라 기종, GPS 등 원본 EXIF 정보를 그대로 유지합니다.</p>
+        <div class="feature-card glass p-10 rounded-[2rem]">
+          <div class="text-purple-500 mb-6 text-3xl">💾</div>
+          <h3 class="text-xl font-bold mb-4">원본 품질 유지</h3>
+          <p class="text-white/40 text-sm leading-relaxed font-medium">EXIF 메타데이터를 보존하여 촬영 날짜와 위치 정보를 그대로 남깁니다.</p>
         </div>
       </div>
     </div>
@@ -153,66 +166,67 @@
   <!-- Comparison Section -->
   <section class="py-24">
     <div class="container mx-auto px-6 max-w-4xl">
-      <h2 class="text-3xl md:text-4xl font-bold text-center mb-16 italic">"한 장씩 하던 시대는 끝났습니다."</h2>
+      <h2 class="text-3xl md:text-5xl font-bold text-center mb-20 tracking-tight text-white/90">복잡한 편집은 이제 잊으세요.</h2>
       
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div class="space-y-4">
-          <div class="aspect-[4/3] rounded-2xl bg-secondary/20 border border-white/5 overflow-hidden flex items-center justify-center relative">
-            <img src="https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=800&q=80" alt="Before" class="object-cover w-full h-full opacity-80" />
-            <div class="absolute top-4 left-4 glass px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-widest">Original</div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+        <div class="space-y-6">
+          <div class="aspect-[4/3] rounded-3xl bg-neutral-900 border border-white/5 overflow-hidden flex items-center justify-center relative shadow-2xl">
+            <img src="https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=800&q=80" alt="Before" class="object-cover w-full h-full opacity-60" />
+            <div class="absolute top-6 left-6 glass px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-white/80">Original</div>
           </div>
-          <p class="text-center text-white/40 text-sm">리뷰를 위해 찍은 수많은 맛집 사진들</p>
+          <p class="text-center text-white/30 text-sm font-medium">원본: 초상권 보호가 필요한 수많은 사진들</p>
         </div>
         
-        <div class="space-y-4">
-          <div class="aspect-[4/3] rounded-2xl bg-secondary/20 border border-primary/30 overflow-hidden flex items-center justify-center relative group">
-            <img src="https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=800&q=80" alt="After" class="object-cover w-full h-full blur-md" />
-            <div class="absolute top-4 left-4 bg-primary px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-widest text-white shadow-xl shadow-primary/50">Mosaic Active</div>
-            <!-- Overlay logic mock -->
-            <div class="absolute inset-0 bg-primary/10 group-hover:bg-transparent transition-all"></div>
+        <div class="space-y-6">
+          <div class="aspect-[4/3] rounded-3xl bg-neutral-900 border border-blue-500/20 overflow-hidden flex items-center justify-center relative group shadow-2xl">
+            <img src="https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=800&q=80" alt="After" class="object-cover w-full h-full blur-xl" />
+            <div class="absolute top-6 left-6 bg-blue-600 px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-white shadow-xl shadow-blue-600/40">Mosaic Active</div>
+            <div class="absolute inset-0 bg-blue-600/5 group-hover:bg-transparent transition-all duration-500"></div>
           </div>
-          <p class="text-center text-white/40 text-sm italic">클릭 한 번으로 끝나는 개인정보 보호</p>
+          <p class="text-center text-blue-400/50 text-sm italic font-medium">결과: 클릭 한 번으로 자동 익명화 완료</p>
         </div>
       </div>
     </div>
   </section>
 
   <!-- Pricing / CTA Card -->
-  <section class="py-24">
+  <section class="py-32">
     <div class="container mx-auto px-6">
-      <div class="max-w-3xl mx-auto glass p-12 rounded-[3rem] text-center border-white/10 shadow-[0_0_100px_rgba(255,255,255,0.05)]">
-        <h2 class="text-4xl font-bold mb-6">Pro 버전으로 무제한 자유를.</h2>
-        <div class="text-5xl font-extrabold mb-8 text-primary font-mono leading-none">₩9,900</div>
+      <div class="max-w-3xl mx-auto glass p-16 rounded-[4rem] text-center border-white/10 shadow-[0_0_150px_rgba(59,130,246,0.1)] relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-64 h-64 bg-blue-600/5 rounded-full blur-3xl -mr-32 -mt-32"></div>
+        <h2 class="text-4xl font-bold mb-8 tracking-tight">Pro 버전으로 무제한 자유를.</h2>
+        <div class="text-6xl font-extrabold mb-10 text-white font-mono tracking-tighter">₩9,900</div>
         
-        <ul class="text-left max-w-sm mx-auto space-y-4 mb-12 text-white/70">
-          <li class="flex items-center gap-3"><i data-lucide="check-circle-2" class="w-5 h-5 text-accent"></i> 1회 처리 사진 개수 무제한</li>
-          <li class="flex items-center gap-3"><i data-lucide="check-circle-2" class="w-5 h-5 text-accent"></i> 워터마크 자동 제거</li>
-          <li class="flex items-center gap-3"><i data-lucide="check-circle-2" class="w-5 h-5 text-accent"></i> 평생 소장 및 무료 업데이트</li>
-          <li class="flex items-center gap-3"><i data-lucide="check-circle-2" class="w-5 h-5 text-accent"></i> Windows & macOS 동시 지원</li>
-        </ul>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left max-w-md mx-auto mb-16">
+          <div class="flex items-center gap-3 text-white/60"><span class="text-green-500">✔</span> 1회 처리 무제한</div>
+          <div class="flex items-center gap-3 text-white/60"><span class="text-green-500">✔</span> 워터마크 영구 제거</div>
+          <div class="flex items-center gap-3 text-white/60"><span class="text-green-500">✔</span> 평생 소장 라이선스</div>
+          <div class="flex items-center gap-3 text-white/60"><span class="text-green-500">✔</span> Win & Mac 모두 지원</div>
+        </div>
 
-        <a href="https://smartstore.naver.com/" target="_blank" class="inline-flex bg-primary text-white px-12 py-5 rounded-3xl font-bold text-xl hover:scale-105 transition-all shadow-2xl shadow-primary/20">
+        <a href="https://smartstore.naver.com/" target="_blank" class="inline-flex bg-white text-black px-16 py-6 rounded-[2rem] font-black text-xl hover:scale-105 transition-all shadow-2xl hover:shadow-white/20">
           지금 바로 구매하기
         </a>
-        <p class="mt-6 text-white/30 text-sm underline underline-offset-4 decoration-white/10">
-          <a href="INSTALL_GUIDE.md">설치 및 보안 가이드 바로가기</a>
+        <p class="mt-10">
+          <a href="INSTALL_GUIDE.md" class="text-white/20 text-xs uppercase tracking-widest hover:text-white/50 transition-all underline underline-offset-8 decoration-white/5">설치 및 보안 가이드 보러가기</a>
         </p>
       </div>
     </div>
   </section>
 
   <!-- Footer -->
-  <footer class="py-12 border-t border-white/5 opacity-40">
-    <div class="container mx-auto px-6 text-center text-sm">
-      <p>© 2026 Face Mosaic Local. All rights reserved.</p>
-      <p class="mt-2 font-mono">Developed for Privacy, Built for Bloggers.</p>
+  <footer class="py-20 border-t border-white/5 opacity-30">
+    <div class="container mx-auto px-6 text-center text-[10px] uppercase tracking-[0.2em] font-bold">
+      <p>© 2026 Face Mosaic Local. Developed for Privacy, Built for Bloggers.</p>
     </div>
   </footer>
 
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Lucide Icons (Fallback to Emoji for reliability if script fails) -->
+  <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
   <script>
-    lucide.createIcons();
+    if (window.lucide) {
+      lucide.createIcons();
+    }
   </script>
 </body>
 </html>

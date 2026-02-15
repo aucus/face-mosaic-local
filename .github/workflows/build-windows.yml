@@ -1,0 +1,40 @@
+# Windows용 Face Mosaic Local 실행 파일 빌드
+# PyInstaller는 크로스 컴파일을 지원하지 않으므로 Windows runner에서 빌드합니다.
+
+name: Build Windows
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Download DNN models
+        run: python download_models.py
+
+      - name: Ensure logo directory exists
+        run: if (!(Test-Path logo)) { New-Item -ItemType Directory -Path logo }
+
+      - name: Build Windows executable
+        run: python build_windows.py
+
+      - name: Upload Windows executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: FaceMosaicLocal-Windows
+          path: dist/FaceMosaicLocal.exe
