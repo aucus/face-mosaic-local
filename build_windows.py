@@ -3,12 +3,14 @@
 Windows 앱 빌드 스크립트
 
 PyInstaller를 사용하여 Windows .exe 실행 파일을 생성합니다.
+빌드 완료 후 dist/를 zip으로 압축하며 INSTALL_GUIDE.md를 포함합니다.
 """
 
 import os
 import sys
 import shutil
 import subprocess
+import zipfile
 from pathlib import Path
 
 
@@ -171,6 +173,16 @@ def build_windows_exe():
         return False
 
 
+def verify_icon_applied() -> None:
+    """(옵션) 빌드 후 아이콘 사용 여부 검증."""
+    exe_path = Path("dist/FaceMosaicLocal.exe")
+    icon_path = Path("assets/icon.ico")
+    if exe_path.exists() and not icon_path.exists():
+        print("⚠ assets/icon.ico 없음 — 기본 아이콘으로 빌드되었을 수 있음")
+    elif exe_path.exists() and icon_path.exists():
+        print("✓ 아이콘 파일 사용됨: assets/icon.ico")
+
+
 def verify_exe():
     """실행 파일 검증"""
     print("\n실행 파일 검증 중...")
@@ -191,6 +203,47 @@ def verify_exe():
         return True
     else:
         print(f"✗ 실행 파일을 찾을 수 없습니다: {exe_path}")
+        return False
+
+
+def get_version() -> str:
+    """프로젝트 버전 반환 (src.__version__)."""
+    try:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from src import __version__
+        return __version__
+    except Exception:
+        return "0.1.0"
+
+
+def create_release_zip() -> bool:
+    """빌드 결과물을 zip으로 압축 (INSTALL_GUIDE.md 포함)."""
+    version = get_version()
+    zip_name = f"FaceMosaicLocal-Pro-v{version}-windows.zip"
+    zip_path = Path("dist") / zip_name
+    exe_path = Path("dist/FaceMosaicLocal.exe")
+    install_guide = Path("docs/INSTALL_GUIDE.md")
+
+    if not exe_path.exists():
+        print("✗ 실행 파일을 찾을 수 없어 zip을 생성하지 않습니다.")
+        return False
+    if not install_guide.exists():
+        print("⚠ docs/INSTALL_GUIDE.md가 없습니다. 가이드 없이 zip을 생성합니다.")
+
+    try:
+        with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+            # dist 내 모든 파일 추가 (exe 및 의존 파일, zip 자체 제외)
+            for f in Path("dist").rglob("*"):
+                if f.is_file() and f != zip_path.resolve():
+                    arcname = f.relative_to(Path("dist"))
+                    zf.write(f, arcname)
+            if install_guide.exists():
+                zf.write(install_guide, "INSTALL_GUIDE.md")
+        size_mb = zip_path.stat().st_size / (1024 * 1024)
+        print(f"✓ ZIP 생성됨: {zip_path} ({size_mb:.1f} MB)")
+        return True
+    except Exception as e:
+        print(f"✗ ZIP 생성 실패: {e}")
         return False
 
 
@@ -226,11 +279,20 @@ def main():
     if not verify_exe():
         sys.exit(1)
     
+    # (옵션) 아이콘 적용 여부 검증
+    verify_icon_applied()
+    
+    # ZIP 생성 (빌드 결과물 + INSTALL_GUIDE.md)
+    create_release_zip()
+    
     print("\n" + "=" * 50)
     print("빌드 완료!")
     print("=" * 50)
     print("\n생성된 파일:")
     print("  dist/FaceMosaicLocal.exe")
+    zip_name = f"FaceMosaicLocal-Pro-v{get_version()}-windows.zip"
+    if (Path("dist") / zip_name).exists():
+        print(f"  dist/{zip_name}")
     print("\n실행 파일 사용 방법:")
     print("  dist/FaceMosaicLocal.exe를 더블클릭하여 실행하거나")
     print("  다른 컴퓨터로 복사하여 바로 실행할 수 있습니다.")

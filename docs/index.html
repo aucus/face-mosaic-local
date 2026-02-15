@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Face Mosaic Local — 오프라인 얼굴 모자이크</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --bg-soft: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --accent: #58a6ff;
+      --accent-hover: #79b8ff;
+      --success: #3fb950;
+      --card: #21262d;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    .container { max-width: 720px; margin: 0 auto; padding: 2rem 1.5rem; }
+    header {
+      text-align: center;
+      padding: 3rem 0 2rem;
+      border-bottom: 1px solid var(--border);
+    }
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 600;
+      margin: 0 0 0.5rem;
+    }
+    .tagline {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+    }
+    section {
+      padding: 2.5rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    section:last-of-type { border-bottom: none; }
+    h2 {
+      font-size: 1.25rem;
+      margin: 0 0 1rem;
+      color: var(--text);
+    }
+    .features {
+      display: grid;
+      gap: 1rem;
+    }
+    .feature {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+    }
+    .feature strong { color: var(--accent); }
+    .compare {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      align-items: start;
+    }
+    @media (max-width: 560px) { .compare { grid-template-columns: 1fr; } }
+    .compare figcaption {
+      margin-top: 0.5rem;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+    .compare img {
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-soft);
+    }
+    .compare .placeholder {
+      aspect-ratio: 4/3;
+      background: var(--card);
+      border-radius: 8px;
+      border: 1px dashed var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+    .cta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+    .btn {
+      display: inline-block;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background 0.2s, color 0.2s;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: var(--bg);
+    }
+    .btn-primary:hover { background: var(--accent-hover); color: var(--bg); }
+    .btn-secondary {
+      background: var(--card);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { background: var(--bg-soft); }
+    .install-guide {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+    }
+    .install-guide a { color: var(--accent); }
+    .install-guide a:hover { text-decoration: underline; }
+    footer {
+      padding: 2rem 0;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🖼️ Face Mosaic Local</h1>
+      <p class="tagline">폴더째로 드래그하면 얼굴 모자이크 끝!</p>
+    </header>
+
+    <section>
+      <h2>한 줄 요약</h2>
+      <p>100% 오프라인으로 동작하는 AI 기반 얼굴 모자이크 배치 처리 프로그램입니다. 이미지는 절대 외부로 전송되지 않습니다.</p>
+    </section>
+
+    <section>
+      <h2>주요 특징</h2>
+      <div class="features">
+        <div class="feature"><strong>오프라인</strong> — 인터넷 없이 로컬에서만 처리</div>
+        <div class="feature"><strong>프라이버시</strong> — 서버 전송 없음, 데이터는 사용자 PC에만 존재</div>
+        <div class="feature"><strong>일괄 처리</strong> — 폴더 단위로 드래그하여 한 번에 처리</div>
+        <div class="feature"><strong>EXIF 보존</strong> — 원본 메타데이터 유지</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>비포 / 애프터</h2>
+      <p class="text-muted" style="color: var(--text-muted); margin-bottom: 1rem;">예시 이미지는 <code>input/</code> 폴더의 샘플로 구성할 수 있습니다.</p>
+      <div class="compare">
+        <figure>
+          <div class="placeholder">원본 이미지<br>(input 예시)</div>
+          <figcaption>처리 전</figcaption>
+        </figure>
+        <figure>
+          <div class="placeholder">모자이크 처리 결과<br>(output 예시)</div>
+          <figcaption>처리 후</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section>
+      <h2>다운로드 및 구매</h2>
+      <p>무료 버전(배치 5장/회, 워터마크 포함)은 GitHub에서, Pro 버전(무제한)은 네이버 스마트스토어에서 구매할 수 있습니다.</p>
+      <div class="cta">
+        <a href="https://smartstore.naver.com/" class="btn btn-primary" target="_blank" rel="noopener">스마트스토어에서 구매하기</a>
+        <a href="https://github.com/" class="btn btn-secondary" target="_blank" rel="noopener">GitHub에서 보기</a>
+      </div>
+    </section>
+
+    <section>
+      <h2>설치 및 보안 가이드</h2>
+      <div class="install-guide">
+        <p>macOS·Windows에서 처음 실행 시 "확인되지 않은 개발자" 또는 SmartScreen 경고가 나올 수 있습니다. 아래 가이드를 참고해 안전하게 실행하세요.</p>
+        <p><a href="INSTALL_GUIDE.md">📄 설치 가이드 (INSTALL_GUIDE.md)</a></p>
+      </div>
+    </section>
+
+    <footer>
+      Face Mosaic Local — 오프라인 얼굴 모자이크 · 프라이버시 우선
+    </footer>
+  </div>
+</body>
+</html>

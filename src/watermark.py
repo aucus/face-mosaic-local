@@ -2,6 +2,7 @@
 워터마크/로고 추가 모듈
 
 처리된 이미지에 로고를 추가하는 기능을 제공합니다.
+무료 버전용 텍스트 워터마크(좌하단)를 지원합니다.
 """
 
 from typing import Optional, Tuple
@@ -192,4 +193,46 @@ def add_logo(
             # 투명도 1.0이면 그대로 덮어쓰기
             image[y:y+logo_h, x:x+logo_w] = logo
     
+    return image
+
+
+def apply_free_watermark(image: np.ndarray) -> np.ndarray:
+    """무료 버전용 텍스트 워터마크를 이미지 좌하단에 추가합니다.
+
+    Args:
+        image: 대상 이미지 (BGR 형식)
+
+    Returns:
+        워터마크가 추가된 이미지 (원본 수정)
+    """
+    text = "Face Mosaic Local - Free Version"
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    font_scale = max(0.4, min(image.shape[0], image.shape[1]) / 1200.0)
+    thickness = max(1, int(font_scale * 2))
+    margin = max(10, int(min(image.shape[0], image.shape[1]) * 0.02))
+
+    (tw, th), _ = cv2.getTextSize(text, font, font_scale, thickness)
+    x = margin
+    y = image.shape[0] - margin - th
+
+    # 반투명 회색 배경
+    overlay = image.copy()
+    cv2.rectangle(
+        overlay,
+        (x - 2, y - 2),
+        (x + tw + 2, y + th + 2),
+        (64, 64, 64),
+        -1,
+    )
+    cv2.addWeighted(overlay, 0.6, image, 0.4, 0, image)
+    cv2.putText(
+        image,
+        text,
+        (x, y + th),
+        font,
+        font_scale,
+        (200, 200, 200),
+        thickness,
+        cv2.LINE_AA,
+    )
     return image

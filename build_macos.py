@@ -3,12 +3,14 @@
 macOS 앱 빌드 스크립트
 
 PyInstaller를 사용하여 macOS .app 번들을 생성합니다.
+빌드 완료 후 dist/를 zip으로 압축하며 INSTALL_GUIDE.md를 포함합니다.
 """
 
 import os
 import sys
 import shutil
 import subprocess
+import zipfile
 from pathlib import Path
 
 
@@ -59,6 +61,21 @@ def check_dependencies():
         print("✓ 모델 파일 확인됨")
     
     return True
+
+
+def verify_icon_applied() -> None:
+    """(옵션) 빌드 후 아이콘이 적용되었는지 검증."""
+    app_path = Path("dist/FaceMosaicLocal.app")
+    if not app_path.exists():
+        return
+    # macOS .app 아이콘: Contents/Resources/*.icns 또는 AppIcon.icns
+    resources = app_path / "Contents" / "Resources"
+    if resources.exists():
+        icns = list(resources.glob("*.icns"))
+        if icns:
+            print(f"✓ 앱 번들 내 아이콘 확인: {icns[0].name}")
+        else:
+            print("⚠ 앱 번들에 .icns 아이콘 없음 (assets/icon.icns 또는 icon.png 확인)")
 
 
 def create_icon():
@@ -177,6 +194,48 @@ def verify_app():
         return False
 
 
+def get_version() -> str:
+    """프로젝트 버전 반환 (src.__version__)."""
+    try:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from src import __version__
+        return __version__
+    except Exception:
+        return "0.1.0"
+
+
+def create_release_zip() -> bool:
+    """빌드 결과물을 zip으로 압축 (INSTALL_GUIDE.md 포함)."""
+    version = get_version()
+    zip_name = f"FaceMosaicLocal-Pro-v{version}-macos.zip"
+    zip_path = Path("dist") / zip_name
+    app_path = Path("dist/FaceMosaicLocal.app")
+    install_guide = Path("docs/INSTALL_GUIDE.md")
+
+    if not app_path.exists():
+        print("✗ 앱 번들을 찾을 수 없어 zip을 생성하지 않습니다.")
+        return False
+    if not install_guide.exists():
+        print("⚠ docs/INSTALL_GUIDE.md가 없습니다. 가이드 없이 zip을 생성합니다.")
+
+    try:
+        with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+            # 앱 번들 전체 추가
+            for f in app_path.rglob("*"):
+                if f.is_file():
+                    arcname = f.relative_to(Path("dist"))
+                    zf.write(f, arcname)
+            # 설치 가이드 추가
+            if install_guide.exists():
+                zf.write(install_guide, "INSTALL_GUIDE.md")
+        size_mb = zip_path.stat().st_size / (1024 * 1024)
+        print(f"✓ ZIP 생성됨: {zip_path} ({size_mb:.1f} MB)")
+        return True
+    except Exception as e:
+        print(f"✗ ZIP 생성 실패: {e}")
+        return False
+
+
 def create_dmg():
     """DMG 파일 생성 (선택)"""
     print("\nDMG 생성 중...")
@@ -249,6 +308,12 @@ def main():
     if not verify_app():
         sys.exit(1)
     
+    # (옵션) 아이콘 적용 여부 검증
+    verify_icon_applied()
+    
+    # ZIP 생성 (빌드 결과물 + INSTALL_GUIDE.md)
+    create_release_zip()
+
     # DMG 생성 (선택)
     print("\nDMG를 생성하시겠습니까? (y/N): ", end='')
     create_dmg_choice = input().lower()
@@ -260,6 +325,9 @@ def main():
     print("=" * 50)
     print("\n생성된 파일:")
     print("  dist/FaceMosaicLocal.app")
+    zip_name = f"FaceMosaicLocal-Pro-v{get_version()}-macos.zip"
+    if (Path("dist") / zip_name).exists():
+        print(f"  dist/{zip_name}")
     if Path('dist/FaceMosaicLocal.dmg').exists():
         print("  dist/FaceMosaicLocal.dmg")
     print("\n앱 실행 방법:")

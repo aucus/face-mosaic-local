@@ -9,11 +9,13 @@ macOS 26.2 호환성 문제 해결
 import sys
 import os
 from pathlib import Path
+from typing import Optional
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QLabel, QLineEdit, QFileDialog, QMessageBox,
     QProgressBar, QTextEdit, QGroupBox, QRadioButton, QButtonGroup,
-    QSlider, QDoubleSpinBox, QSpinBox, QTabWidget
+    QSlider, QDoubleSpinBox, QSpinBox, QTabWidget,
+    QMenuBar, QMenu, QDialog, QDialogButtonBox
 )
 from PySide6.QtCore import Qt, QThread, Signal
 from PySide6.QtGui import QFont
@@ -23,7 +25,78 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.processor import FaceMosaicProcessor
 from src.utils import setup_logger
+from src.license import LicenseManager, GUMROAD_URL
+from src.utils import get_image_files
 from gui.manual_mosaic_window import ManualMosaicWidget
+
+
+class LicenseDialog(QDialog):
+    """라이선스 활성화 다이얼로그"""
+
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
+        super().__init__(parent)
+        self.setWindowTitle("라이선스 활성화")
+        self.setMinimumWidth(380)
+        layout = QVBoxLayout(self)
+        layout.setSpacing(12)
+
+        self._mgr = LicenseManager()
+
+        # 상태
+        status_group = QGroupBox("현재 상태")
+        status_layout = QVBoxLayout(status_group)
+        if self._mgr.is_pro:
+            self._status_label = QLabel("✅ Pro 버전\n배치 제한: 무제한\n워터마크: 없음")
+            deactivate_btn = QPushButton("라이선스 해제")
+            deactivate_btn.clicked.connect(self._deactivate)
+            status_layout.addWidget(self._status_label)
+            status_layout.addWidget(deactivate_btn)
+        else:
+            self._status_label = QLabel("무료 버전\n제한: 배치 5장/회, 워터마크 있음")
+            status_layout.addWidget(self._status_label)
+        layout.addWidget(status_group)
+
+        # 키 입력 (무료일 때만 활성)
+        key_group = QGroupBox("라이선스 키")
+        key_layout = QVBoxLayout(key_group)
+        self._key_edit = QLineEdit()
+        self._key_edit.setPlaceholderText("FMSL-XXXX-XXXX-XXXX-XXXX")
+        key_layout.addWidget(self._key_edit)
+        layout.addWidget(key_group)
+
+        # 버튼
+        btn_layout = QHBoxLayout()
+        activate_btn = QPushButton("활성화")
+        activate_btn.clicked.connect(self._activate)
+        btn_layout.addWidget(activate_btn)
+        btn_layout.addStretch()
+        layout.addLayout(btn_layout)
+
+        # 구매 링크
+        buy_label = QLabel(f'<a href="{GUMROAD_URL}">Pro 구매하기 →</a>')
+        buy_label.setOpenExternalLinks(True)
+        layout.addWidget(buy_label)
+
+        # 표준 버튼
+        std_btns = QDialogButtonBox(QDialogButtonBox.Cancel)
+        std_btns.rejected.connect(self.reject)
+        layout.addWidget(std_btns)
+
+    def _activate(self) -> None:
+        key = self._key_edit.text().strip()
+        if not key:
+            QMessageBox.warning(self, "입력 필요", "라이선스 키를 입력해주세요.")
+            return
+        if self._mgr.activate(key):
+            QMessageBox.information(self, "활성화 완료", "Pro 버전이 활성화되었습니다.")
+            self.accept()
+        else:
+            QMessageBox.warning(self, "활성화 실패", "유효하지 않은 라이선스 키입니다.")
+
+    def _deactivate(self) -> None:
+        self._mgr.deactivate()
+        QMessageBox.information(self, "해제 완료", "라이선스가 해제되었습니다.")
+        self.accept()
 
 
 class ProcessingThread(QThread):
@@ -93,12 +166,29 @@ class FaceMosaicGUI(QMainWindow):
         
         # 로거 설정
         self.logger = setup_logger("face_mosaic_gui")
+
+        # 라이선스 관리
+        self._license_mgr = LicenseManager()
         
         # UI 구성
         self.setup_ui()
+        self._update_window_title()
     
+    def _update_window_title(self) -> None:
+        """윈도우 타이틀에 라이선스 상태 표시"""
+        if self._license_mgr.is_pro:
+            self.setWindowTitle("Face Mosaic Local Pro")
+        else:
+            self.setWindowTitle("Face Mosaic Local (무료 버전 - 배치 5장 제한)")
+
     def setup_ui(self):
         """UI 구성"""
+        # 메뉴바: 도움말 → 라이선스 활성화
+        menubar = self.menuBar()
+        help_menu = menubar.addMenu("도움말")
+        act_license = help_menu.addAction("라이선스 활성화...")
+        act_license.triggered.connect(self._show_license_dialog)
+
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         
@@ -362,6 +452,13 @@ class FaceMosaicGUI(QMainWindow):
         # 초기 로그
         self.log("Face Mosaic Local GUI 시작")
         self.log("상단 탭에서 자동/수동 모드를 선택하세요.")
+
+    def _show_license_dialog(self) -> None:
+        """라이선스 활성화 다이얼로그 표시"""
+        dlg = LicenseDialog(self)
+        if dlg.exec() == QDialog.Accepted:
+            self._license_mgr = LicenseManager()
+            self._update_window_title()
     
     def update_mosaic_size_label(self, value):
         """모자이크 크기 레이블 업데이트"""
@@ -494,6 +591,30 @@ class FaceMosaicGUI(QMainWindow):
         
         if not self.validate_inputs():
             return
+
+        # 무료 버전 배치 제한 확인
+        try:
+            image_files = get_image_files(self.input_folder, recursive=False)
+        except Exception:
+            image_files = []
+        limit = self._license_mgr.batch_limit
+        if limit > 0 and len(image_files) > limit:
+            msg = QMessageBox(self)
+            msg.setWindowTitle("무료 버전 제한")
+            msg.setText(
+                f"선택한 폴더에 {len(image_files)}장의 이미지가 있습니다.\n"
+                f"무료 버전은 {limit}장까지만 처리할 수 있습니다."
+            )
+            btn_limit = msg.addButton("5장만 처리", QMessageBox.YesRole)
+            msg.addButton("Pro 버전 구매", QMessageBox.NoRole)
+            btn_cancel = msg.addButton("취소", QMessageBox.RejectRole)
+            msg.exec()
+            if msg.clickedButton() == btn_cancel:
+                return
+            if msg.clickedButton() != btn_limit:
+                self._show_license_dialog()
+                return
+            # 5장만 처리: processor 내부에서 5장으로 제한됨
         
         # 옵션 값 가져오기
         self.detector_type = "haar" if self.haar_radio.isChecked() else "dnn"

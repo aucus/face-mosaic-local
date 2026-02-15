@@ -12,9 +12,10 @@ import numpy as np
 from tqdm import tqdm
 
 from .detector import FaceDetector, get_detector
+from .license import LicenseManager
 from .mosaic import process_faces
 from .utils import get_image_files, load_image, save_image, setup_logger
-from .watermark import add_logo
+from .watermark import add_logo, apply_free_watermark
 
 
 class FaceMosaicProcessor:
@@ -62,6 +63,9 @@ class FaceMosaicProcessor:
         
         # 로거 설정
         self.logger = setup_logger("face_mosaic_processor")
+
+        # 라이선스 관리 (1회 생성, process_image/process_folder에서 재사용)
+        self._license_mgr = LicenseManager()
         
         # 통계
         self.stats = {
@@ -116,7 +120,11 @@ class FaceMosaicProcessor:
                     )
                 except Exception as e:
                     self.logger.warning(f"로고 추가 실패: {e}")
-            
+
+            # 무료 버전 워터마크 (라이선스에 따라)
+            if self._license_mgr.watermark_enabled:
+                image = apply_free_watermark(image)
+
             # 이미지 저장
             save_image(image, output_path, quality=self.quality, exif_data=exif_data)
             
@@ -174,6 +182,13 @@ class FaceMosaicProcessor:
         except Exception as e:
             self.logger.error(f"이미지 파일 목록 가져오기 실패: {e}")
             return self.stats
+
+        if self._license_mgr.batch_limit > 0 and len(image_files) > self._license_mgr.batch_limit:
+            self.logger.warning(
+                f"무료 버전은 한 번에 {self._license_mgr.batch_limit}장까지 처리 가능합니다. "
+                f"(총 {len(image_files)}장 중 {self._license_mgr.batch_limit}장만 처리)"
+            )
+            image_files = image_files[:self._license_mgr.batch_limit]
         
         self.stats["total"] = len(image_files)
         
