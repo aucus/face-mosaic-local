@@ -12,40 +12,18 @@
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'sans-serif'],
-            mono: ['JetBrains Mono', 'monospace'],
-          },
-          colors: {
-            brand: {
-              background: '#0a0a0a',
-              foreground: '#ffffff',
-              primary: '#3b82f6',
-              secondary: '#1a1a1a',
-              accent: '#10b981',
-            }
-          }
-        }
-      }
-    }
-  </script>
   
-  <style>
+  <style type="text/css">
+    /* Fallback and Base Styles */
     :root {
-      --background: #0a0a0a;
-      --foreground: #ffffff;
-      --primary: #3b82f6;
-      --secondary: #1a1a1a;
-      --accent: #10b981;
+      --bg-color: #0a0a0a;
+      --fg-color: #ffffff;
+      --primary-color: #3b82f6;
     }
     
     body {
-      background-color: var(--background);
-      color: var(--foreground);
+      background-color: var(--bg-color);
+      color: var(--fg-color);
       font-family: 'Inter', sans-serif;
       margin: 0;
     }
@@ -72,7 +50,7 @@
     }
   </style>
 </head>
-<body class="overflow-x-hidden antialiased">
+<body class="bg-[#0a0a0a] text-white overflow-x-hidden antialiased">
 
   <!-- Nav -->
   <nav class="fixed top-0 w-full z-50 glass border-b border-white/5 py-4">
@@ -221,12 +199,14 @@
     </div>
   </footer>
 
-  <!-- Lucide Icons (Fallback to Emoji for reliability if script fails) -->
+  <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
   <script>
-    if (window.lucide) {
-      lucide.createIcons();
-    }
+    window.addEventListener('load', function() {
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+    });
   </script>
 </body>
 </html>
