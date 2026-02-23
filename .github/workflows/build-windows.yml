@@ -1,5 +1,6 @@
 # Windows용 Face Mosaic Local 실행 파일 빌드
 # PyInstaller는 크로스 컴파일을 지원하지 않으므로 Windows runner에서 빌드합니다.
+# 비활성화: 필요 시 아래 build-windows job의 if: false 를 제거하면 다시 실행됩니다.
 
 name: Build Windows
 
@@ -10,6 +11,7 @@ on:
 
 jobs:
   build-windows:
+    if: false
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
