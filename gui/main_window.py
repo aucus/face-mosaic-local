@@ -157,7 +157,7 @@ class FaceMosaicGUI(QMainWindow):
         self.confidence = 0.5
         self.logo_path = ""
         self.logo_scale = 0.2  # 기본값 2배 증가 (0.1 → 0.2)
-        self.logo_margin = 20
+        self.logo_margin = 80
         self.logo_opacity = 1.0
         
         # 처리 중 플래그
@@ -304,7 +304,7 @@ class FaceMosaicGUI(QMainWindow):
         self.logo_margin_spin = QSpinBox()
         self.logo_margin_spin.setMinimum(0)
         self.logo_margin_spin.setMaximum(100)
-        self.logo_margin_spin.setValue(20)
+        self.logo_margin_spin.setValue(80)
         self.logo_margin_spin.valueChanged.connect(self.update_logo_margin)
         logo_margin_layout.addWidget(self.logo_margin_spin)
         logo_margin_layout.addStretch()

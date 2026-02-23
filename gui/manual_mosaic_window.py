@@ -293,7 +293,7 @@ class ManualMosaicWidget(QWidget):
         self.blur_kernel_size = 51
         self.logo_path = ""
         self.logo_scale = 0.2
-        self.logo_margin = 20
+        self.logo_margin = 80
         self.logo_opacity = 1.0
         
         # PyInstaller 빌드 앱에서는 사용자 홈 디렉토리 사용
@@ -409,7 +409,7 @@ class ManualMosaicWidget(QWidget):
         self.blur_size_layout.addWidget(self.blur_size_label_widget)
         self.blur_slider = QSlider(Qt.Horizontal)
         self.blur_slider.setMinimum(5)
-        self.blur_slider.setMaximum(101)
+        self.blur_slider.setMaximum(501)
         self.blur_slider.setValue(51)
         self.blur_slider.setSingleStep(2)  # 홀수만
         self.blur_slider.valueChanged.connect(self.update_blur_size)
@@ -462,7 +462,7 @@ class ManualMosaicWidget(QWidget):
             self.logo_margin_spin = QSpinBox()
             self.logo_margin_spin.setMinimum(0)
             self.logo_margin_spin.setMaximum(100)
-            self.logo_margin_spin.setValue(20)
+            self.logo_margin_spin.setValue(80)
             self.logo_margin_spin.valueChanged.connect(self.update_logo_margin)
             logo_margin_layout.addWidget(self.logo_margin_spin)
             logo_margin_layout.addStretch()
@@ -699,16 +699,20 @@ class ManualMosaicWidget(QWidget):
             QMessageBox.critical(self, "오류", f"이미지를 로드하는 중 오류가 발생했습니다:\n{str(e)}")
     
     def prev_image(self):
-        """이전 이미지"""
-        if self.current_image_index > 0:
-            if self._check_unsaved_changes():
-                self.load_image(self.current_image_index - 1)
+        """이전 이미지 (선택 영역 있으면 자동 저장 후 이동)"""
+        if self.current_image_index <= 0:
+            return
+        if self.image_label.selected_regions and not self.save_image():
+            return
+        self.load_image(self.current_image_index - 1)
 
     def next_image(self):
-        """다음 이미지"""
-        if self.current_image_index < len(self.image_files) - 1:
-            if self._check_unsaved_changes():
-                self.load_image(self.current_image_index + 1)
+        """다음 이미지 (선택 영역 있으면 자동 저장 후 이동)"""
+        if self.current_image_index >= len(self.image_files) - 1:
+            return
+        if self.image_label.selected_regions and not self.save_image():
+            return
+        self.load_image(self.current_image_index + 1)
     
     def clear_regions(self):
         """선택 영역 초기화"""
@@ -741,16 +745,16 @@ class ManualMosaicWidget(QWidget):
         else:  # Cancel
             return False
 
-    def save_image(self):
-        """처리된 이미지 저장"""
+    def save_image(self) -> bool:
+        """처리된 이미지 저장. 성공 시 True, 실패 시 False 반환."""
         if self.current_image is None:
             QMessageBox.warning(self, "경고", "이미지가 로드되지 않았습니다.")
-            return
-        
+            return False
+
         if not self.output_folder:
             QMessageBox.warning(self, "경고", "출력 폴더를 선택해주세요.")
-            return
-        
+            return False
+
         # 선택된 영역이 없고 로고도 없으면 경고
         logo_path_text = self.logo_path
         if self.logo_path_edit is not None:
@@ -765,8 +769,8 @@ class ManualMosaicWidget(QWidget):
                 "선택된 영역이 없고 로고도 선택되지 않았습니다.\n"
                 "모자이크를 적용하거나 로고를 선택해주세요."
             )
-            return
-        
+            return False
+
         try:
             # 이미지 복사
             processed_image = self.current_image.copy()
@@ -803,7 +807,7 @@ class ManualMosaicWidget(QWidget):
             
             # 저장
             save_image(processed_image, str(output_path), quality=95, exif_data=self.current_exif)
-            
+
             # 완료 메시지
             method_name = "모자이크" if self.method == "mosaic" else "블러"
             message = f"이미지가 저장되었습니다:\n{output_path}\n\n"
@@ -812,8 +816,10 @@ class ManualMosaicWidget(QWidget):
             if logo_path_text:
                 message += "로고 추가됨"
             QMessageBox.information(self, "완료", message)
+            return True
         except Exception as e:
             QMessageBox.critical(self, "오류", f"이미지를 저장하는 중 오류가 발생했습니다:\n{str(e)}")
+            return False
 
 
 class ManualMosaicWindow(QMainWindow):
