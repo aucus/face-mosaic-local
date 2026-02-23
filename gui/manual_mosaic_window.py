@@ -403,7 +403,7 @@ class ManualMosaicWidget(QWidget):
         self.mosaic_size_layout.addWidget(self.mosaic_size_label)
         method_layout.addLayout(self.mosaic_size_layout)
         
-        # 블러 커널 크기 조절
+        # 블러 커널 크기 조절 (슬라이더 + 숫자 입력)
         self.blur_size_layout = QHBoxLayout()
         self.blur_size_label_widget = QLabel("블러 강도:")
         self.blur_size_layout.addWidget(self.blur_size_label_widget)
@@ -414,15 +414,20 @@ class ManualMosaicWidget(QWidget):
         self.blur_slider.setSingleStep(2)  # 홀수만
         self.blur_slider.valueChanged.connect(self.update_blur_size)
         self.blur_size_layout.addWidget(self.blur_slider)
-        self.blur_size_label = QLabel("51")
-        self.blur_size_label.setMinimumWidth(30)
-        self.blur_size_layout.addWidget(self.blur_size_label)
+        self.blur_size_spin = QSpinBox()
+        self.blur_size_spin.setMinimum(5)
+        self.blur_size_spin.setMaximum(501)
+        self.blur_size_spin.setValue(51)
+        self.blur_size_spin.setSingleStep(2)
+        self.blur_size_spin.setMinimumWidth(60)
+        self.blur_size_spin.valueChanged.connect(self.on_blur_spin_changed)
+        self.blur_size_layout.addWidget(self.blur_size_spin)
         method_layout.addLayout(self.blur_size_layout)
         
         # 초기에는 블러 레이아웃 숨김
         self.blur_size_label_widget.setVisible(False)
         self.blur_slider.setVisible(False)
-        self.blur_size_label.setVisible(False)
+        self.blur_size_spin.setVisible(False)
         
         bottom_layout.addWidget(method_group)
         
@@ -561,7 +566,7 @@ class ManualMosaicWidget(QWidget):
             # 블러 크기 레이아웃 숨김
             self.blur_size_label_widget.setVisible(False)
             self.blur_slider.setVisible(False)
-            self.blur_size_label.setVisible(False)
+            self.blur_size_spin.setVisible(False)
         elif self.blur_radio.isChecked():
             self.method = "blur"
             # 모자이크 크기 레이아웃 숨김
@@ -571,7 +576,7 @@ class ManualMosaicWidget(QWidget):
             # 블러 크기 레이아웃 표시
             self.blur_size_label_widget.setVisible(True)
             self.blur_slider.setVisible(True)
-            self.blur_size_label.setVisible(True)
+            self.blur_size_spin.setVisible(True)
     
     def update_mosaic_size(self, value: int):
         """모자이크 크기 업데이트"""
@@ -579,13 +584,28 @@ class ManualMosaicWidget(QWidget):
         self.mosaic_size_label.setText(str(value))
     
     def update_blur_size(self, value: int):
-        """블러 커널 크기 업데이트 (홀수로 보정)"""
-        # 홀수로 보정
+        """블러 커널 크기 업데이트 (슬라이더 → 홀수 보정 → 스핀 동기화)"""
         if value % 2 == 0:
             value += 1
+            self.blur_slider.blockSignals(True)
             self.blur_slider.setValue(value)
+            self.blur_slider.blockSignals(False)
         self.blur_kernel_size = value
-        self.blur_size_label.setText(str(value))
+        self.blur_size_spin.blockSignals(True)
+        self.blur_size_spin.setValue(value)
+        self.blur_size_spin.blockSignals(False)
+
+    def on_blur_spin_changed(self, value: int):
+        """블러 강도 숫자 입력 시 (홀수 보정 후 슬라이더 동기화)"""
+        if value % 2 == 0:
+            value += 1
+            self.blur_size_spin.blockSignals(True)
+            self.blur_size_spin.setValue(value)
+            self.blur_size_spin.blockSignals(False)
+        self.blur_kernel_size = value
+        self.blur_slider.blockSignals(True)
+        self.blur_slider.setValue(value)
+        self.blur_slider.blockSignals(False)
     
     def select_logo(self):
         """로고 파일 선택"""
